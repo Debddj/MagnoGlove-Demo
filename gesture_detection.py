@@ -1,8 +1,16 @@
 """
-MagnoGlove - Gesture Detection Module
-======================================
+MagnoGlove - Gesture Detection Module  (macOS-compatible, headless)
+=====================================================================
 Captures webcam frames in a background thread, detects hand landmarks
 using MediaPipe Hands, and classifies gestures using finger joint geometry.
+
+macOS Note
+----------
+  On macOS, ALL GUI window calls (cv2.imshow, cv2.waitKey) must run on the
+  MAIN thread.  Since Ursina already owns the main thread for its 3D window,
+  we run the detector fully headless — no OpenCV display window.
+  The gesture state is communicated entirely via the thread-safe shared_state
+  dict; the Ursina HUD shows the live gesture name instead.
 
 Detected Gesture States
 -----------------------
@@ -33,20 +41,24 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import threading
+import platform
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Landmark indices
-THUMB_TIP    = 4
-INDEX_TIP    = 8
-FINGER_TIPS  = [8, 12, 16, 20]   # Index, Middle, Ring, Pinky – tips
-FINGER_MCPS  = [5,  9, 13, 17]   # Corresponding MCP (knuckle) joints
+THUMB_TIP       = 4
+INDEX_TIP       = 8
+FINGER_TIPS     = [8, 12, 16, 20]   # Index, Middle, Ring, Pinky – tips
+FINGER_MCPS     = [5,  9, 13, 17]   # Corresponding MCP (knuckle) joints
 
-PINCH_THRESHOLD = 0.07            # Normalized distance units (0–1 range)
-MIN_CURL_COUNT  = 3               # Fingers curled needed for CLOSED_FIST
+PINCH_THRESHOLD = 0.07              # Normalized distance units (0–1 range)
+MIN_CURL_COUNT  = 3                 # Fingers curled needed for CLOSED_FIST
+
+# On macOS, cv2.imshow cannot be called from a background thread.
+# Detect platform and disable the webcam preview window automatically.
+IS_MACOS = platform.system() == "Darwin"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -61,34 +73,6 @@ class GestureState:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Overlay Color Scheme
-# ─────────────────────────────────────────────────────────────────────────────
-
-_OVERLAY = {
-    GestureState.CLOSED_FIST: {
-        'label': "ON",
-        'border': (0, 255, 80),
-        'badge' : (0, 160, 50),
-    },
-    GestureState.PINCH: {
-        'label': "PRECISION",
-        'border': (0, 190, 255),
-        'badge' : (0, 130, 200),
-    },
-    GestureState.OPEN_HAND: {
-        'label': "OFF",
-        'border': (60, 60, 200),
-        'badge' : (40, 40, 160),
-    },
-    GestureState.UNKNOWN: {
-        'label': "---",
-        'border': (60, 60, 60),
-        'badge' : (40, 40, 40),
-    },
-}
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 #  Gesture Detector Class
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -97,19 +81,29 @@ class GestureDetector:
     Runs webcam capture + hand landmark detection in a daemon thread.
     Writes the current gesture string to a thread-safe shared_state dict.
 
+    On macOS: runs fully headless (no cv2.imshow).
+    On Windows/Linux: shows an annotated webcam window.
+
     Usage:
         detector = GestureDetector(shared_state)
-        detector.start()          # begins background thread
+        detector.start()    # begins background thread
         ...
-        detector.stop()           # releases resources
+        detector.stop()     # releases resources
     """
 
-    def __init__(self, shared_state: dict, camera_index: int = 0):
-        self.shared_state  = shared_state
-        self.camera_index  = camera_index
-        self.running       = False
-        self.thread        = None
-        self.cap           = None
+    def __init__(self, shared_state: dict, camera_index: int = 0,
+                 headless: bool = None):
+        self.shared_state = shared_state
+        self.camera_index = camera_index
+        self.running      = False
+        self.thread       = None
+        self.cap          = None
+
+        # Auto-detect headless mode: forced on macOS, optional elsewhere
+        if headless is None:
+            self.headless = IS_MACOS
+        else:
+            self.headless = headless
 
         # ── MediaPipe setup ───────────────────────────────────────
         self._mp_hands = mp.solutions.hands
@@ -118,7 +112,7 @@ class GestureDetector:
 
         self._hands = self._mp_hands.Hands(
             static_image_mode        = False,
-            max_num_hands            = 1,          # track one hand for performance
+            max_num_hands            = 1,
             min_detection_confidence = 0.75,
             min_tracking_confidence  = 0.60,
         )
@@ -131,19 +125,26 @@ class GestureDetector:
         if not self.cap.isOpened():
             raise RuntimeError(
                 f"[GestureDetector] Cannot open camera index {self.camera_index}. "
-                "Make sure a webcam is connected."
+                "Make sure a webcam is connected and camera permission is granted."
             )
         self.running = True
         self.thread  = threading.Thread(target=self._detection_loop, daemon=True)
         self.thread.start()
-        print(f"  → Webcam ({self.camera_index}) opened — detection thread started.")
+
+        mode = "headless (macOS)" if self.headless else "windowed"
+        print(f"  → Webcam ({self.camera_index}) opened [{mode}] — detection thread started.")
+
+        if self.headless:
+            print("  → Webcam preview disabled on macOS (Ursina owns the main thread).")
+            print("  → Gesture state shown live in the 3D simulation HUD instead.")
 
     def stop(self):
         """Signal the thread to stop and release all resources."""
         self.running = False
         if self.cap and self.cap.isOpened():
             self.cap.release()
-        cv2.destroyAllWindows()
+        if not self.headless:
+            cv2.destroyAllWindows()
         print("  → Webcam released.")
 
     # ─────────────── Gesture Classification ──────────────────────
@@ -180,11 +181,21 @@ class GestureDetector:
     # ─────────────── Detection Loop (background thread) ──────────
 
     def _detection_loop(self):
-        """Main capture-detect-display loop — runs in daemon thread."""
+        """
+        Main capture-detect loop — runs in a daemon thread.
+
+        Headless mode (macOS): purely reads frames and classifies gestures;
+          never calls any cv2 display functions.
+        Windowed mode (Win/Linux): additionally shows annotated webcam feed.
+        """
+        frame_count = 0
+
         while self.running:
             ret, frame = self.cap.read()
             if not ret:
                 continue
+
+            frame_count += 1
 
             # Mirror so user sees a natural reflection
             frame = cv2.flip(frame, 1)
@@ -198,58 +209,65 @@ class GestureDetector:
 
             if results.multi_hand_landmarks:
                 for hand_lm in results.multi_hand_landmarks:
-                    # Draw skeleton on frame
-                    self._mp_draw.draw_landmarks(
-                        frame, hand_lm,
-                        self._mp_hands.HAND_CONNECTIONS,
-                        self._mp_style.get_default_hand_landmarks_style(),
-                        self._mp_style.get_default_hand_connections_style(),
-                    )
                     gesture = self._classify(hand_lm.landmark)
+
+                    # Draw skeleton only in windowed mode
+                    if not self.headless:
+                        self._mp_draw.draw_landmarks(
+                            frame, hand_lm,
+                            self._mp_hands.HAND_CONNECTIONS,
+                            self._mp_style.get_default_hand_landmarks_style(),
+                            self._mp_style.get_default_hand_connections_style(),
+                        )
 
             # Write result to shared state (thread-safe)
             with self.shared_state['lock']:
                 self.shared_state['gesture'] = gesture
 
-            # Render overlay and show window
-            self._draw_overlay(frame, gesture, w, h)
-            cv2.imshow("MagnoGlove | Gesture Detection  (press Q to quit)", frame)
+            # ── Console heartbeat every 90 frames ─────────────────
+            # Gives confirmation that detection is running headlessly
+            if frame_count % 90 == 0:
+                print(f"  [CV] frame={frame_count:5d}  gesture={gesture}")
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                self.running = False
-                break
+            # ── Windowed display (non-macOS only) ─────────────────
+            if not self.headless:
+                self._draw_overlay(frame, gesture, w, h)
+                cv2.imshow(
+                    "MagnoGlove | Gesture Detection  (press Q to quit)", frame
+                )
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.running = False
+                    break
 
+        # Cleanup
         self.cap.release()
-        cv2.destroyAllWindows()
+        if not self.headless:
+            cv2.destroyAllWindows()
 
-    # ─────────────── Webcam Overlay UI ───────────────────────────
+    # ─────────────── Webcam Overlay UI (windowed mode only) ──────
 
     @staticmethod
     def _draw_overlay(frame, gesture: str, w: int, h: int):
-        """
-        Render an informational HUD on top of the webcam frame.
-        Shows gesture name, magnet state, and instructions.
-        """
-        cfg = _OVERLAY.get(gesture, _OVERLAY[GestureState.UNKNOWN])
-        border = cfg['border']
-        badge  = cfg['badge']
-        label  = cfg['label']
+        """Render HUD on webcam frame (only called in windowed/non-macOS mode)."""
 
-        # ── Coloured border to signal state at a glance ───────────
+        _OVERLAY = {
+            GestureState.CLOSED_FIST: ('ON',        (0, 255, 80),   (0, 160, 50)),
+            GestureState.PINCH:       ('PRECISION',  (0, 190, 255),  (0, 130, 200)),
+            GestureState.OPEN_HAND:   ('OFF',        (60, 60, 200),  (40, 40, 160)),
+            GestureState.UNKNOWN:     ('---',        (60, 60, 60),   (40, 40, 40)),
+        }
+        label, border, badge = _OVERLAY.get(gesture, _OVERLAY[GestureState.UNKNOWN])
+
         cv2.rectangle(frame, (0, 0), (w - 1, h - 1), border, 5)
-
-        # ── Info panel (top-left) ─────────────────────────────────
         cv2.rectangle(frame, (0, 0), (320, 100), (8, 8, 22), -1)
         cv2.rectangle(frame, (0, 0), (320, 100), badge, 2)
 
         font  = cv2.FONT_HERSHEY_DUPLEX
         font2 = cv2.FONT_HERSHEY_SIMPLEX
 
-        cv2.putText(frame, "MagnoGlove",          (10, 28),  font,  0.75, (0, 210, 255), 1)
-        cv2.putText(frame, f"Gesture : {gesture}", (10, 56),  font,  0.52, (210, 210, 210), 1)
-        cv2.putText(frame, f"Magnet  : {label}",   (10, 82),  font,  0.52, badge, 1)
-
-        # ── Instruction bar (bottom) ──────────────────────────────
+        cv2.putText(frame, "MagnoGlove",           (10, 28), font,  0.75, (0, 210, 255), 1)
+        cv2.putText(frame, f"Gesture : {gesture}",  (10, 56), font,  0.52, (210, 210, 210), 1)
+        cv2.putText(frame, f"Magnet  : {label}",    (10, 82), font,  0.52, badge, 1)
         cv2.rectangle(frame, (0, h - 36), (w, h), (8, 8, 22), -1)
         cv2.putText(
             frame,

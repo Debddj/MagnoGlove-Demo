@@ -8,6 +8,11 @@ mediapipe>=0.10.0             # Real-time hand landmark detection (21 points)
 # ── 3D Simulation ──────────────────────────────────────────────
 ursina>=5.0.0                 # 3D game engine – scene, entities, update loop
 
+# ── Ursina macOS dependencies ──────────────────────────────────
+screeninfo>=0.8.1             # Required by Ursina window on non-AppKit systems
+pyobjc-framework-Cocoa        # Required by Ursina window.py on macOS
+pyobjc-framework-Quartz       # Required by Ursina window.py on macOS
+
 # ── Math / Numerics ────────────────────────────────────────────
 numpy>=1.24.0                 # Vector math for gesture geometry
 
@@ -15,3 +20,4 @@ numpy>=1.24.0                 # Vector math for gesture geometry
 # threading   – background gesture detection thread
 # math        – sin/cos for animation
 # time        – startup delays in main.py
+# platform    – detect macOS for headless cv2 mode
