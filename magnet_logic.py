@@ -1,30 +1,6 @@
 """
-MagnoGlove – Magnet Control Logic  v2.1  (Fixed & Enhanced)
+MagnoGlove – Magnet Control Logic  v3.1 (Enterprise Physics Refactor)
 =============================================================
-BUG FIXES:
-  - Strength now lerps smoothly each frame instead of snapping
-    instantly — eliminates jarring "jump" when switching states.
-  - Radius used in get_pull_speed is now live (tracks lerped strength)
-    rather than the preset max, so force fades out gracefully at edges.
-  - Console log rate-limited: only logs on actual state transition,
-    not every frame (was causing console spam in previous version).
-
-IMPROVEMENTS:
-  - `strength_lerp_speed` config constant controls ramp up/down speed.
-  - `get_force_vector` helper takes object & magnet positions and returns
-    the 3D pull vector directly — used by simulation_3d.py.
-  - `get_info()` now includes live lerped values, not just presets.
-
-Magnet Presets
---------------
-  OFF       → strength 0.0, radius 0.0  — deactivated
-  ON        → strength 1.0, radius 9.0  — full electromagnetic pull
-  PRECISION → strength 0.35, radius 3.8 — reduced field (pinch mode)
-
-Physics Model
--------------
-  pull_speed_at_dist = pull_speed / (distance × 0.4 + 0.6)
-  Softened inverse-distance: stable at zero separation, ~7 u/s at 1 m.
 """
 
 from typing import Optional
@@ -45,6 +21,7 @@ class MagnetState:
     PRECISION = "PRECISION"
 
 
+# ── TUNED PHYSICS PRESETS ──
 _PRESETS: dict[str, dict] = {
     MagnetState.OFF: {
         'target_strength': 0.00,
@@ -55,15 +32,15 @@ _PRESETS: dict[str, dict] = {
     },
     MagnetState.ON: {
         'target_strength': 1.00,
-        'radius'         : 9.20,
-        'pull_speed'     : 7.50,
+        'radius'         : 20.0,   # Expanded to reach all table corners
+        'pull_speed'     : 280.0,  # Scaled up for proper force accumulation
         'ring_scale'     : 3.30,
         'glow_alpha'     : 60,
     },
     MagnetState.PRECISION: {
         'target_strength': 0.35,
-        'radius'         : 3.90,
-        'pull_speed'     : 2.30,
+        'radius'         : 15.0,   # Precision should still reach the table
+        'pull_speed'     : 95.0,   # Slower, gentler pull
         'ring_scale'     : 1.65,
         'glow_alpha'     : 38,
     },
@@ -105,18 +82,11 @@ class MagnetController:
     def update(self, gesture: str, dt: float = 0.016) -> str:
         """
         Evaluate gesture, update state, smoothly lerp strength.
-
-        Args:
-            gesture : GestureState constant from gesture_detection thread
-            dt      : frame delta-time in seconds (for smooth lerp)
-
-        Returns:
-            Current MagnetState constant string
         """
         new_state = _GESTURE_MAP.get(gesture, MagnetState.OFF)
 
         if new_state != self._prev_state:
-            print(f"  [Magnet] {self._prev_state or 'INIT'} → {new_state}"
+            print(f"  [Magnet] {self._prev_state or 'INIT'} -> {new_state}"
                   f"  (gesture: {gesture})")
             self._prev_state = new_state
 
@@ -141,7 +111,7 @@ class MagnetController:
         return self.strength > 0.01
 
     def effective_radius(self) -> float:
-        """Live attraction radius (not scaled by strength to ensure objects are reachable)."""
+        """Live attraction radius."""
         return self.radius
 
     def get_pull_speed(self, distance: float) -> float:
@@ -151,7 +121,8 @@ class MagnetController:
         """
         if not self.is_active() or distance > self.radius:
             return 0.0
-        damp = distance * 0.4 + 0.6
+        # Softened inverse-square law for realistic magnetic pull
+        damp = (distance * 0.5) ** 2 + 1.0
         return (self.pull_speed * self.strength) / damp
 
     def get_info(self) -> dict:
