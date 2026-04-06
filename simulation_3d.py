@@ -1,554 +1,275 @@
 """
-MagnoGlove - 3D Simulation Module
-====================================
-Builds and runs the interactive 3D scene using the Ursina game engine.
-All entities, animations, physics, and UI are defined here.
-
-Scene Layout (world-space Y axis = up)
----------------------------------------
-  y =  2.5  →  Glove / electromagnet placeholder
-  y = -2.55 →  Metal sphere resting positions (on table)
-  y = -3.0  →  Table surface
-  y =  ↑    →  Background panel and decorative elements
-
-Visual Effects by State
------------------------
-  Magnet ON        →  Blue expanding rings + blue glow pulse on glove
-  Magnet PRECISION →  Amber smaller rings + amber glow
-  Magnet OFF       →  All effects hidden, objects obey gravity
-
-Threading Notes
----------------
-  Ursina requires its app.run() on the MAIN THREAD.
-  Gesture detection runs in a daemon background thread and writes to
-  shared_state['gesture']. SimController.update() reads it each frame.
+MagnoGlove Pro – 3D Simulation Module  (v2.0 Industry Edition)
+================================================================
+Complete visual overhaul. 10 distinct metallic object types, enhanced
+glove with coil bands, holographic HUD with telemetry, animated console
+screens, blueprint grid, particle bursts, and rich color transitions.
 """
 
 from ursina import *
-import math
-
+import math, random
 from magnet_logic import MagnetController, MagnetState
 from gesture_detection import GestureState
 
+C_BG         = color.rgb(3,5,15)
+C_TABLE_TOP  = color.rgb(30,20,10)
+C_TABLE_BODY = color.rgb(20,13,6)
+C_GRID       = color.rgba(20,50,100,55)
+C_CONSOLE    = color.rgb(12,16,30)
+C_GLOVE_IDLE = color.rgb(22,40,100)
+C_GLOVE_ON   = color.rgb(0,130,240)
+C_GLOVE_PREC = color.rgb(210,145,0)
+C_FINGER     = color.rgb(18,32,85)
+C_COIL_IDLE  = color.rgb(160,120,20)
+C_COIL_ON    = color.rgb(0,200,255)
+C_COIL_PREC  = color.rgb(255,200,0)
+C_RING_ON    = (0,190,255)
+C_RING_PREC  = (255,190,0)
+C_UI_TITLE   = color.rgb(0,220,255)
+C_UI_ON      = color.rgb(0,255,130)
+C_UI_PREC    = color.rgb(255,215,0)
+C_UI_OFF     = color.rgb(255,60,80)
+C_UI_WHITE   = color.rgb(200,215,230)
+C_UI_DIM     = color.rgb(80,100,130)
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Color Palette
-# ─────────────────────────────────────────────────────────────────────────────
+TABLE_Y    = -3.0
+OBJECT_Y   = -2.58
+GLOVE_POS  = Vec3(0,3.5,0)
+ATTACH_DIST= 0.60
+GRAVITY    = -9.8
+DAMPING    = 0.86
+RING_COUNT = 6
+RING_SPEED = {MagnetState.ON:2.3, MagnetState.PRECISION:1.4}
 
-C_BG           = color.rgb(8,  10, 22)
-C_TABLE        = color.rgb(38, 26, 14)
-C_TABLE_TOP    = color.rgb(52, 36, 20)
-C_GRID         = color.rgba(35, 45, 80, 75)
+OBJECT_CONFIGS = [
+    ('SPHERE',  -3.5,-0.8, color.rgb(160,165,185), color.rgb(180,215,255)),
+    ('HEX_BOLT',-2.2, 1.2, color.rgb(150,155,175), color.rgb(170,210,255)),
+    ('SCREW',   -0.9,-1.5, color.rgb(145,150,168), color.rgb(165,205,250)),
+    ('PLATE',    0.3, 1.8, color.rgb(155,158,172), color.rgb(175,212,252)),
+    ('COIN',     1.6,-0.6, color.rgb(180,148,70),  color.rgb(220,195,120)),
+    ('ROD',      2.9, 1.0, color.rgb(155,160,180), color.rgb(175,215,255)),
+    ('WASHER',  -2.8, 2.5, color.rgb(150,155,172), color.rgb(170,210,252)),
+    ('SHARD',    0.9, 2.8, color.rgb(162,150,158), color.rgb(185,212,255)),
+    ('NUT',      3.5,-1.8, color.rgb(148,158,165), color.rgb(168,210,252)),
+    ('CAP',     -1.5,-2.5, color.rgb(160,148,165), color.rgb(182,210,255)),
+]
 
-C_GLOVE_IDLE   = color.rgb(40, 80, 175)
-C_GLOVE_ON     = color.rgb(0, 145, 255)
-C_GLOVE_PREC   = color.rgb(220, 170, 0)
-C_FINGER       = color.rgb(30, 65, 150)
-C_COIL         = color.rgb(200, 160, 20)
+class MetalObject:
+    def __init__(self, obj_type, rest_x, rest_z, c_idle, c_pulled):
+        self.obj_type = obj_type
+        self.rest_pos = Vec3(rest_x, OBJECT_Y, rest_z)
+        self.c_idle   = c_idle
+        self.c_pulled = c_pulled
+        self.velocity = Vec3(0,0,0)
+        self.attached = False
+        self._parts   = []
+        self._build()
 
-C_METAL        = color.rgb(175, 180, 200)
-C_METAL_PULL   = color.rgb(200, 220, 255)
-C_METAL_LOCK   = color.rgb(180, 220, 255)
+    def _add(self, model, col, scale, offset=Vec3(0,0,0), rot=Vec3(0,0,0)):
+        e = Entity(model=model, color=col, scale=scale,
+                   position=self.rest_pos+offset, rotation=rot)
+        self._parts.append(e)
+        return e
 
-C_RING_ON      = (0, 160, 255)
-C_RING_PREC    = (255, 200, 0)
+    @property
+    def position(self):
+        return self._parts[0].position if self._parts else Vec3(0,0,0)
 
-C_PANEL_BG     = color.rgba(8, 10, 30, 235)
-C_PANEL_BORDER = color.rgba(0, 175, 255, 90)
+    @position.setter
+    def position(self, val):
+        if not self._parts: return
+        delta = val - self._parts[0].position
+        for p in self._parts: p.position += delta
 
-C_UI_TITLE     = color.rgb(0, 200, 255)
-C_UI_ON        = color.rgb(0, 255, 120)
-C_UI_PREC      = color.rgb(255, 215, 0)
-C_UI_OFF       = color.rgb(255, 75, 75)
-C_UI_WHITE     = color.rgb(215, 215, 225)
-C_UI_DIM       = color.rgb(110, 110, 130)
+    @property
+    def color(self): return self._parts[0].color if self._parts else color.white
 
-C_CONSOLE      = color.rgb(18, 22, 42)
-C_SCREEN       = color.rgba(0, 180, 255, 110)
+    @color.setter
+    def color(self, val):
+        for p in self._parts: p.color = val
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Scene / Physics Constants
-# ─────────────────────────────────────────────────────────────────────────────
+    @property
+    def rotation_y(self): return self._parts[0].rotation_y if self._parts else 0
 
-TABLE_Y      = -3.0          # Top surface of table (world Y)
-OBJECT_Y     = -2.58         # Resting Y for metal spheres
-GLOVE_POS    = Vec3(0, 2.5, 0)
-ATTACH_DIST  = 0.55          # Distance at which object snaps to glove
-GRAVITY      = -9.8          # World-space gravity (Y axis, units/s²)
-DAMPING      = 0.87          # Velocity damping coefficient per frame
-RING_COUNT   = 5             # Number of field ring layers
-RING_SPEED   = {MagnetState.ON: 2.1, MagnetState.PRECISION: 1.3}
+    @rotation_y.setter
+    def rotation_y(self, val):
+        for p in self._parts: p.rotation_y = val
 
+    def _build(self):
+        t = self.obj_type
+        if   t=='SPHERE':   self._add('sphere',self.c_idle,0.44)
+        elif t=='HEX_BOLT': self._add('cylinder',self.c_idle,Vec3(.38,.14,.38)); self._add('cylinder',color.rgb(130,135,150),Vec3(.14,.40,.14),Vec3(0,-.27,0))
+        elif t=='SCREW':    self._add('cylinder',self.c_idle,Vec3(.34,.09,.34)); self._add('cylinder',color.rgb(128,132,148),Vec3(.10,.45,.10),Vec3(0,-.27,0))
+        elif t=='PLATE':    self._add('cube',self.c_idle,Vec3(.70,.11,.44))
+        elif t=='COIN':     self._add('cylinder',self.c_idle,Vec3(.40,.07,.40))
+        elif t=='ROD':      self._add('cylinder',self.c_idle,Vec3(.12,.60,.12))
+        elif t=='WASHER':   self._add('cylinder',self.c_idle,Vec3(.40,.08,.40)); self._add('cylinder',color.rgb(8,10,20),Vec3(.18,.09,.18))
+        elif t=='SHARD':    self._add('cube',self.c_idle,Vec3(.25,.48,.16),rot=Vec3(12,25,15))
+        elif t=='NUT':      self._add('cylinder',self.c_idle,Vec3(.36,.16,.36)); self._add('cylinder',color.rgb(8,10,20),Vec3(.15,.17,.15))
+        elif t=='CAP':      self._add('cylinder',self.c_idle,Vec3(.36,.10,.36)); self._add('cylinder',color.rgb(135,140,155),Vec3(.14,.35,.14),Vec3(0,-.22,0))
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Simulation Controller Entity
-# ─────────────────────────────────────────────────────────────────────────────
 
 class SimController(Entity):
-    """
-    Custom Ursina Entity.  Its update() method is called by Ursina every frame.
-    Owns all simulation logic: gesture reading, physics, visual effects, UI sync.
-    """
-
-    def __init__(self, shared_state: dict, magnet: MagnetController):
+    def __init__(self, shared_state, magnet):
         super().__init__()
         self.shared_state = shared_state
-        self.magnet       = magnet
-
-        # Runtime state
-        self.current_gesture  = GestureState.UNKNOWN
-        self.current_magnet   = MagnetState.OFF
-        self._ring_timer      = 0.0
-        self._pulse_timer     = 0.0
-
-        # Scene entity references (populated by MagnoGloveSimulation)
-        self.glove         = None
-        self.metal_objects = []    # list of Entity with extra attrs
-        self.rings         = []    # field ring entities
-        self.glow_sphere   = None
-
-        # UI text references (populated by MagnoGloveSimulation)
-        self.ui_gesture = None
-        self.ui_magnet  = None
-        self.ui_objects = None
-        self.ui_fps     = None
-
-    # ─────────────── Ursina Update (called every frame) ──────────
+        self.magnet = magnet
+        self.current_gesture = GestureState.UNKNOWN
+        self.current_magnet  = MagnetState.OFF
+        self._ring_timer = 0.0
+        self._pulse_timer = 0.0
+        self._temp = 24.0
+        self.glove = self.coil_band = self.glow_sphere = None
+        self.metal_objects = []; self.rings = []; self.screen_entities = []
+        self.ui_gesture = self.ui_magnet = self.ui_objects = None
+        self.ui_voltage = self.ui_fps = None
 
     def update(self):
-        dt = time.dt   # Ursina's per-frame delta time (seconds)
-
-        # 1. Read latest gesture (thread-safe)
+        dt = time.dt
         with self.shared_state['lock']:
             self.current_gesture = self.shared_state['gesture']
-
-        # 2. Update electromagnet state machine
         self.current_magnet = self.magnet.update(self.current_gesture)
-
-        # 3. Advance animation timers
         self._ring_timer  += dt
         self._pulse_timer += dt
-
-        # 4. Visual effects
+        self._temp += (24 + self.magnet.strength*42 - self._temp)*dt*0.4
         self._update_glove_effects(dt)
-
-        # 5. Metal object physics
         self._update_physics(dt)
-
-        # 6. HUD
         self._update_ui()
 
-    # ─────────────── Visual Effects ──────────────────────────────
-
-    def _update_glove_effects(self, dt: float):
-        """Drive magnetic field rings and glove glow based on magnet state."""
-
+    def _update_glove_effects(self, dt):
         if self.current_magnet == MagnetState.OFF:
-            # ── No field – reset all effects ─────────────────────
-            self.glove.color = C_GLOVE_IDLE
-            for ring in self.rings:
-                ring.scale = 0
-                ring.color = color.clear
-            if self.glow_sphere:
-                self.glow_sphere.scale = 0
-                self.glow_sphere.color = color.clear
+            if self.glove:     self.glove.color     = C_GLOVE_IDLE
+            if self.coil_band: self.coil_band.color = C_COIL_IDLE
+            for r in self.rings: r.scale=0; r.color=color.clear
+            if self.glow_sphere: self.glow_sphere.scale=0; self.glow_sphere.color=color.clear
+            for s in self.screen_entities: s.color=color.rgba(0,160,255,90)
             return
-
-        # ── Active states (ON or PRECISION) ──────────────────────
-        if self.current_magnet == MagnetState.ON:
-            glove_col  = C_GLOVE_ON
-            ring_rgb   = C_RING_ON
-            ring_speed = RING_SPEED[MagnetState.ON]
-            ring_max_s = self.magnet.ring_scale
-            ring_alpha = 210
-            glow_rgb   = (0, 100, 255)
-            glow_a     = self.magnet.glow_alpha
-        else:  # PRECISION
-            glove_col  = C_GLOVE_PREC
-            ring_rgb   = C_RING_PREC
-            ring_speed = RING_SPEED[MagnetState.PRECISION]
-            ring_max_s = self.magnet.ring_scale
-            ring_alpha = 155
-            glow_rgb   = (255, 185, 0)
-            glow_a     = self.magnet.glow_alpha
-
-        self.glove.color = glove_col
-
-        # ── Expanding ring animation ──────────────────────────────
-        # Each ring is offset in phase so they travel outward sequentially.
-        for i, ring in enumerate(self.rings):
-            phase = (self._ring_timer * ring_speed + i / RING_COUNT) % 1.0
-            s     = max(0.05, phase * ring_max_s)
-            a     = int(ring_alpha * (1.0 - phase))   # fade as they expand
-
-            ring.position = self.glove.position
-            ring.scale    = s
-            ring.color    = color.rgba(*ring_rgb, a)
-
-        # ── Pulsing glow sphere ───────────────────────────────────
+        is_on = (self.current_magnet == MagnetState.ON)
+        gc = C_GLOVE_ON   if is_on else C_GLOVE_PREC
+        cc = C_COIL_ON    if is_on else C_COIL_PREC
+        rr = C_RING_ON    if is_on else C_RING_PREC
+        rs = RING_SPEED[MagnetState.ON if is_on else MagnetState.PRECISION]
+        ra = 200          if is_on else 150
+        gr = (0,110,255)  if is_on else (255,165,0)
+        sc = color.rgba(0,200,255,125) if is_on else color.rgba(255,170,0,105)
+        if self.glove:     self.glove.color     = gc
+        if self.coil_band: self.coil_band.color = cc
+        for i,ring in enumerate(self.rings):
+            ph=(self._ring_timer*rs+i/RING_COUNT)%1.0
+            ring.position=GLOVE_POS; ring.scale=max(.04,ph*self.magnet.ring_scale)
+            ring.color=color.rgba(*rr,int(ra*(1-ph)))
         if self.glow_sphere:
-            pulse = 1.0 + 0.22 * math.sin(self._pulse_timer * 6.5)
-            self.glow_sphere.position = self.glove.position
-            self.glow_sphere.scale    = 1.7 * pulse
-            self.glow_sphere.color    = color.rgba(*glow_rgb, glow_a)
+            pulse=1+.20*math.sin(self._pulse_timer*7)
+            self.glow_sphere.position=GLOVE_POS; self.glow_sphere.scale=1.9*pulse
+            self.glow_sphere.color=color.rgba(*gr,self.magnet.glow_alpha)
+        for s in self.screen_entities:
+            fl=.85+.15*math.sin(self._pulse_timer*9+id(s))
+            s.color=color.rgba(*sc[:3],int(sc.a*fl))
 
-    # ─────────────── Physics ─────────────────────────────────────
-
-    def _update_physics(self, dt: float):
-        """
-        Simulate magnetic attraction and gravity for each metal object.
-
-        When ACTIVE:
-          - Compute pull speed based on distance (inverse-distance model)
-          - Move object toward glove position each frame
-          - If within ATTACH_DIST, snap/orbit around glove
-
-        When OFF:
-          - Apply gravity downward until table surface
-          - Smoothly slide back to resting position
-        """
-        for idx, obj in enumerate(self.metal_objects):
+    def _update_physics(self, dt):
+        for idx,obj in enumerate(self.metal_objects):
             if self.magnet.is_active():
-                direction = self.glove.position - obj.position
-                dist      = direction.length()
-
-                if dist < ATTACH_DIST:
-                    # ── Attached to glove ─────────────────────────
-                    # Spread objects horizontally around glove underside
-                    n      = len(self.metal_objects)
-                    spread = (idx - n / 2) * 0.45
-                    target = self.glove.position + Vec3(spread, -0.85, 0)
-
-                    obj.position  = lerp(obj.position, target, dt * 9)
-                    obj.velocity  = Vec3(0, 0, 0)
-                    obj.attached  = True
-                    obj.color     = C_METAL_LOCK
-
-                    # Rotate while held (satisfying visual)
-                    obj.rotation_y += 140 * dt
-
+                direction=GLOVE_POS-obj.position; dist=direction.length()
+                if dist<ATTACH_DIST:
+                    col_i=idx%5; row_i=idx//5
+                    target=GLOVE_POS+Vec3((col_i-2)*.46,-1.0+row_i*-.46,0)
+                    obj.position=lerp(obj.position,target,dt*10)
+                    obj.velocity=Vec3(0,0,0); obj.attached=True
+                    obj.color=lerp(obj.color,obj.c_pulled,dt*4)
+                    obj.rotation_y+=(155 if self.current_magnet==MagnetState.ON else 75)*dt
                 else:
-                    # ── Flying toward glove ───────────────────────
-                    speed      = self.magnet.get_pull_speed(dist)
-                    obj.velocity += direction.normalized() * speed * dt
-                    obj.velocity *= DAMPING
-                    obj.position += obj.velocity * dt
-                    obj.attached  = False
-
-                    # Colour shifts bluer as it approaches
-                    t = max(0.0, 1.0 - dist / 5.0)
-                    obj.color = color.rgb(
-                        int(175 + t * 25),
-                        int(180 + t * 40),
-                        int(200 + t * 55),
-                    )
-
+                    spd=self.magnet.get_pull_speed(dist)
+                    obj.velocity+=direction.normalized()*spd*dt
+                    obj.velocity*=DAMPING; obj.position+=obj.velocity*dt; obj.attached=False
+                    t=max(0.,1.-dist/5.5); obj.color=lerp(obj.color,obj.c_pulled,dt*3*t)
             else:
-                # ── Gravity & return to rest ──────────────────────
-                obj.attached = False
-
-                if obj.position.y > OBJECT_Y + 0.01:
-                    # Still airborne – apply gravity
-                    obj.velocity.y += GRAVITY * dt
-                    obj.velocity   *= 0.97
-                    obj.position   += obj.velocity * dt
-
-                    if obj.position.y <= OBJECT_Y:
-                        obj.position.y = OBJECT_Y
-                        obj.velocity   = Vec3(0, 0, 0)
+                obj.attached=False
+                if obj.position.y>OBJECT_Y+.015:
+                    obj.velocity.y+=GRAVITY*dt; obj.velocity*=.97; obj.position+=obj.velocity*dt
+                    if obj.position.y<=OBJECT_Y:
+                        obj.position.y=OBJECT_Y; obj.velocity.y*=-.25; obj.velocity.x*=.65; obj.velocity.z*=.65
                 else:
-                    # On table – slide back to resting XZ position
-                    obj.position.y = OBJECT_Y
-                    obj.velocity   = Vec3(0, 0, 0)
-                    obj.position.x = lerp(obj.position.x, obj.rest_pos.x, dt * 1.8)
-                    obj.position.z = lerp(obj.position.z, obj.rest_pos.z, dt * 1.8)
-
-                obj.color = lerp(obj.color, C_METAL, dt * 2.5) if hasattr(obj.color, '__iter__') else C_METAL
-
-    # ─────────────── HUD Update ──────────────────────────────────
+                    obj.position.y=OBJECT_Y; obj.velocity=Vec3(0,0,0)
+                    obj.position.x=lerp(obj.position.x,obj.rest_pos.x,dt*1.8)
+                    obj.position.z=lerp(obj.position.z,obj.rest_pos.z,dt*1.8)
+                    obj.color=lerp(obj.color,obj.c_idle,dt*2.0)
 
     def _update_ui(self):
-        if not self.ui_gesture:
-            return
-
+        if not self.ui_gesture: return
         self.ui_gesture.text = f"Gesture  :  {self.current_gesture}"
-
-        if self.current_magnet == MagnetState.ON:
-            self.ui_magnet.text  = "Magnet   :  ON  ●"
-            self.ui_magnet.color = C_UI_ON
-        elif self.current_magnet == MagnetState.PRECISION:
-            self.ui_magnet.text  = "Magnet   :  PRECISION  ◉"
-            self.ui_magnet.color = C_UI_PREC
+        V=self.magnet.strength*(24. if self.current_magnet==MagnetState.ON else 8.4)
+        A=self.magnet.strength*(3.2 if self.current_magnet==MagnetState.ON else 1.1)
+        if self.current_magnet==MagnetState.ON:
+            self.ui_magnet.text=f"Magnet   :  ON  ●  [{V:.0f}V / {A:.1f}A]"; self.ui_magnet.color=C_UI_ON
+        elif self.current_magnet==MagnetState.PRECISION:
+            self.ui_magnet.text=f"Magnet   :  PRECISION  ◉  [{V:.1f}V]"; self.ui_magnet.color=C_UI_PREC
         else:
-            self.ui_magnet.text  = "Magnet   :  OFF  ○"
-            self.ui_magnet.color = C_UI_OFF
+            self.ui_magnet.text="Magnet   :  OFF  ○"; self.ui_magnet.color=C_UI_OFF
+        att=sum(1 for o in self.metal_objects if o.attached)
+        if att:   self.ui_objects.text=f"Objects  :  {att}/{len(self.metal_objects)} attracted  ↑"; self.ui_objects.color=C_UI_ON
+        elif self.magnet.is_active(): self.ui_objects.text="Objects  :  Approaching..."; self.ui_objects.color=C_UI_PREC
+        else:     self.ui_objects.text="Objects  :  Idle  —"; self.ui_objects.color=C_UI_WHITE
+        if self.ui_voltage:
+            flux=self.magnet.strength*(0.85 if self.current_magnet==MagnetState.ON else 0.30)
+            self.ui_voltage.text=f"Flux     :  {flux:.2f} T   Temp : {self._temp:.0f}°C"
+            self.ui_voltage.color=C_UI_PREC if self._temp>35 else C_UI_DIM
+        self.ui_fps.text=f"FPS      :  {int(1/max(time.dt,.001))}"
 
-        attached = sum(1 for o in self.metal_objects if getattr(o, 'attached', False))
-        if attached:
-            self.ui_objects.text  = f"Objects  :  {attached} attracted ↑"
-            self.ui_objects.color = C_UI_ON
-        elif self.magnet.is_active():
-            self.ui_objects.text  = "Objects  :  Approaching..."
-            self.ui_objects.color = C_UI_PREC
-        else:
-            self.ui_objects.text  = "Objects  :  Idle"
-            self.ui_objects.color = C_UI_WHITE
-
-        safe_dt = max(time.dt, 0.001)
-        self.ui_fps.text = f"FPS      :  {int(1 / safe_dt)}"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  Main Simulation Class
-# ─────────────────────────────────────────────────────────────────────────────
 
 class MagnoGloveSimulation:
-    """
-    Orchestrates Ursina setup, scene construction, and the main run loop.
-
-    Usage:
-        sim = MagnoGloveSimulation(shared_state)
-        sim.run()   # blocks until window is closed
-    """
-
-    def __init__(self, shared_state: dict):
-        self.shared_state = shared_state
-        self.magnet       = MagnetController()
-
-        # ── Init Ursina ───────────────────────────────────────────
-        self.app = Ursina(
-            title     = "MagnoGlove – Electromagnetic Glove Simulation",
-            borderless = False,
-            fullscreen = False,
-        )
-        window.color = C_BG
-
-        # Build scene and UI; wire SimController
-        self._build_scene()
-        self._build_ui()
-
-    # ─────────────── Scene Construction ──────────────────────────
+    def __init__(self, shared_state):
+        self.shared_state=shared_state; self.magnet=MagnetController()
+        self.app=Ursina(title="MagnoGlove Pro – Electromagnetic Glove Simulation  v2.0",borderless=False,fullscreen=False)
+        window.color=C_BG
+        self._build_scene(); self._build_ui()
 
     def _build_scene(self):
-        """Construct every 3D entity in the world."""
-
-        # ── Camera ───────────────────────────────────────────────
-        camera.position  = Vec3(0, 2.2, -14)
-        camera.rotation_x = -7
-
-        # ── Lighting ─────────────────────────────────────────────
-        AmbientLight(color=color.rgba(75, 80, 110, 255))
-        dl = DirectionalLight()
-        dl.look_at(Vec3(1, -2, 1))
-
-        # ── Far background panel ──────────────────────────────────
-        Entity(
-            model    = 'quad',
-            color    = color.rgb(10, 12, 28),
-            scale    = (50, 28),
-            position = Vec3(0, 1, 14),
-        )
-
-        # ── Workspace Table ───────────────────────────────────────
-        # Main slab
-        Entity(
-            model    = 'cube',
-            color    = C_TABLE,
-            scale    = (15, 0.22, 9),
-            position = Vec3(0, TABLE_Y - 0.11, 0),
-        )
-        # Bright top surface
-        Entity(
-            model    = 'cube',
-            color    = C_TABLE_TOP,
-            scale    = (15, 0.04, 9),
-            position = Vec3(0, TABLE_Y + 0.02, 0),
-        )
-        # Four legs
-        for lx, lz in [(-6.8, -4.0), (6.8, -4.0), (-6.8, 4.0), (6.8, 4.0)]:
-            Entity(
-                model    = 'cube',
-                color    = color.rgb(28, 18, 10),
-                scale    = (0.18, 3.2, 0.18),
-                position = Vec3(lx, TABLE_Y - 1.6, lz),
-            )
-
-        # Grid overlay on table top (tech aesthetic)
-        for xi in range(-7, 8):
-            Entity(model='cube', color=C_GRID,
-                   scale=(0.012, 0.008, 9),
-                   position=Vec3(xi, TABLE_Y + 0.065, 0))
-        for zi in range(-4, 5):
-            Entity(model='cube', color=C_GRID,
-                   scale=(15, 0.008, 0.012),
-                   position=Vec3(0, TABLE_Y + 0.065, zi))
-
-        # ── Glove / Electromagnet ─────────────────────────────────
-        glove = Entity(
-            model    = 'cube',
-            color    = C_GLOVE_IDLE,
-            scale    = (1.5, 0.42, 0.95),
-            position = GLOVE_POS,
-        )
-
-        # Finger segments
-        for fx in [-0.45, -0.15, 0.15, 0.45]:
-            Entity(model='cube', color=C_FINGER,
-                   scale=(0.20, 0.52, 0.24),
-                   position=Vec3(GLOVE_POS.x + fx,
-                                 GLOVE_POS.y + 0.47,
-                                 GLOVE_POS.z))
-        # Thumb
-        Entity(model='cube', color=C_FINGER,
-               scale=(0.24, 0.19, 0.40),
-               position=Vec3(GLOVE_POS.x - 0.78,
-                              GLOVE_POS.y + 0.06,
-                              GLOVE_POS.z))
-
-        # Gold coil band (electromagnet winding indicator)
-        Entity(model='cube', color=C_COIL,
-               scale=(1.35, 0.07, 1.00),
-               position=Vec3(GLOVE_POS.x, GLOVE_POS.y - 0.01, GLOVE_POS.z))
-
-        # Thin cable going up (suspends the glove from above)
-        Entity(model='cube', color=color.rgb(50, 50, 70),
-               scale=(0.06, 3.5, 0.06),
-               position=Vec3(GLOVE_POS.x, GLOVE_POS.y + 2.2, GLOVE_POS.z))
-
-        # ── Magnetic Field Rings ──────────────────────────────────
-        rings = []
-        for _ in range(RING_COUNT):
-            r = Entity(
-                model    = 'circle',    # built-in Ursina flat disc
-                color    = color.clear,
-                scale    = 0,
-                position = GLOVE_POS,
-                rotation = Vec3(90, 0, 0),   # flat in XZ plane
-            )
-            rings.append(r)
-
-        # ── Glow Sphere (halo around glove) ──────────────────────
-        glow = Entity(
-            model    = 'sphere',
-            color    = color.clear,
-            scale    = 0,
-            position = GLOVE_POS,
-        )
-
-        # ── Metallic Objects (spheres on table) ───────────────────
-        rest_positions = [
-            Vec3(-3.2, OBJECT_Y, -1.0),
-            Vec3(-1.6, OBJECT_Y,  1.2),
-            Vec3( 0.0, OBJECT_Y, -1.8),
-            Vec3( 1.4, OBJECT_Y,  0.6),
-            Vec3( 3.0, OBJECT_Y, -0.6),
-            Vec3(-2.2, OBJECT_Y,  2.2),
-            Vec3( 2.4, OBJECT_Y,  2.0),
-        ]
-
-        metal_objects = []
-        for pos in rest_positions:
-            obj = Entity(
-                model    = 'sphere',
-                color    = C_METAL,
-                scale    = 0.40,
-                position = Vec3(pos),
-            )
-            # Extra physics attributes
-            obj.rest_pos = Vec3(pos)
-            obj.velocity = Vec3(0, 0, 0)
-            obj.attached = False
-            metal_objects.append(obj)
-
-        # Small decorative bolts (flat cylinders, scattered)
-        bolt_positions = [Vec3(-4.5, OBJECT_Y + 0.04, 0.5),
-                          Vec3( 4.2, OBJECT_Y + 0.04, 1.5)]
-        for bp in bolt_positions:
-            Entity(model='cylinder', color=color.rgb(160, 165, 175),
-                   scale=(0.15, 0.08, 0.15), position=bp)
-
-        # ── Lab Console (back wall decoration) ───────────────────
-        Entity(model='cube', color=C_CONSOLE,
-               scale=(15, 2.8, 0.6),
-               position=Vec3(0, TABLE_Y + 1.4, 4.2))
-        # Screen panels on console
-        for sx in [-4.5, 0, 4.5]:
-            Entity(model='quad', color=C_SCREEN,
-                   scale=(3.0, 1.2),
-                   position=Vec3(sx, TABLE_Y + 1.7, 3.89))
-            # Horizontal scan lines on screens
-            for row in [-0.35, -0.15, 0.05, 0.25]:
-                Entity(model='quad',
-                       color=color.rgba(0, 200, 255, 40),
-                       scale=(2.8, 0.04),
-                       position=Vec3(sx, TABLE_Y + 1.7 + row, 3.88))
-
-        # ── Wire up controller ────────────────────────────────────
-        self.ctrl               = SimController(self.shared_state, self.magnet)
-        self.ctrl.glove         = glove
-        self.ctrl.metal_objects = metal_objects
-        self.ctrl.rings         = rings
-        self.ctrl.glow_sphere   = glow
-
-    # ─────────────── HUD Construction ────────────────────────────
+        camera.position=Vec3(0,2.5,-16); camera.rotation_x=-7
+        AmbientLight(color=color.rgba(60,70,105,255))
+        dl=DirectionalLight(); dl.look_at(Vec3(1,-2,1))
+        Entity(model='quad',color=color.rgb(3,5,15),scale=(60,35),position=Vec3(0,2,16))
+        Entity(model='cube',color=C_TABLE_BODY,scale=(18,.24,10),position=Vec3(0,TABLE_Y-.12,0))
+        Entity(model='cube',color=C_TABLE_TOP,scale=(18,.05,10),position=Vec3(0,TABLE_Y+.02,0))
+        Entity(model='cube',color=color.rgba(0,120,200,55),scale=(18,.02,.04),position=Vec3(0,TABLE_Y+.05,-5.0))
+        for lx,lz in [(-8.2,-4.5),(8.2,-4.5),(-8.2,4.5),(8.2,4.5)]:
+            Entity(model='cube',color=color.rgb(18,12,6),scale=(.2,3.5,.2),position=Vec3(lx,TABLE_Y-1.75,lz))
+        for xi in range(-9,10):
+            Entity(model='cube',color=C_GRID,scale=(.012,.008,10),position=Vec3(xi,TABLE_Y+.065,0))
+        for zi in range(-5,6):
+            Entity(model='cube',color=C_GRID,scale=(18,.008,.012),position=Vec3(0,TABLE_Y+.065,zi))
+        glove=Entity(model='cube',color=C_GLOVE_IDLE,scale=(1.6,.45,1.0),position=GLOVE_POS)
+        for fx in [-.48,-.16,.16,.48]:
+            Entity(model='cube',color=C_FINGER,scale=(.22,.55,.25),position=Vec3(GLOVE_POS.x+fx,GLOVE_POS.y+.50,GLOVE_POS.z))
+        Entity(model='cube',color=C_FINGER,scale=(.25,.20,.42),position=Vec3(GLOVE_POS.x-.85,GLOVE_POS.y+.05,GLOVE_POS.z))
+        coil_band=Entity(model='cube',color=C_COIL_IDLE,scale=(1.45,.06,1.05),position=Vec3(GLOVE_POS.x,GLOVE_POS.y,GLOVE_POS.z))
+        Entity(model='cube',color=color.rgb(35,40,65),scale=(.07,4.5,.07),position=Vec3(GLOVE_POS.x,GLOVE_POS.y+2.6,GLOVE_POS.z))
+        rings=[Entity(model='circle',color=color.clear,scale=0,position=GLOVE_POS,rotation=Vec3(90,0,0)) for _ in range(RING_COUNT)]
+        glow=Entity(model='sphere',color=color.clear,scale=0,position=GLOVE_POS)
+        metal_objects=[MetalObject(*cfg) for cfg in OBJECT_CONFIGS]
+        Entity(model='cube',color=C_CONSOLE,scale=(18,3.2,.7),position=Vec3(0,TABLE_Y+1.6,5.0))
+        screen_entities=[]
+        for sx in [-6,-2,2,6]:
+            s=Entity(model='quad',color=color.rgba(0,160,255,90),scale=(2.8,1.2),position=Vec3(sx,TABLE_Y+1.9,4.64))
+            screen_entities.append(s)
+            for ry in [-.35,-.15,.05,.25]:
+                Entity(model='quad',color=color.rgba(0,200,255,28),scale=(2.6,.035),position=Vec3(sx,TABLE_Y+1.9+ry,4.63))
+        self.ctrl=SimController(self.shared_state,self.magnet)
+        self.ctrl.glove=glove; self.ctrl.coil_band=coil_band
+        self.ctrl.metal_objects=metal_objects; self.ctrl.rings=rings
+        self.ctrl.glow_sphere=glow; self.ctrl.screen_entities=screen_entities
 
     def _build_ui(self):
-        """Build the 2D heads-up display overlay in camera.ui space."""
-
-        # Panel background + border
-        Entity(parent=camera.ui, model='quad', color=C_PANEL_BG,
-               scale=(0.40, 0.33), position=Vec3(-0.595, 0.365, 0))
-        Entity(parent=camera.ui, model='quad', color=C_PANEL_BORDER,
-               scale=(0.404, 0.334), position=Vec3(-0.595, 0.365, 0))
-
-        # Title
-        Text(text="⚡  MagnoGlove  ⚡",
-             parent=camera.ui, scale=1.30, color=C_UI_TITLE,
-             position=Vec3(-0.785, 0.475))
-
-        Text(text="━" * 30,
-             parent=camera.ui, scale=0.88,
-             color=color.rgba(0, 175, 255, 100),
-             position=Vec3(-0.785, 0.450))
-
-        self.ctrl.ui_gesture = Text(
-            text     = "Gesture  :  --",
-            parent   = camera.ui, scale=0.92, color=C_UI_WHITE,
-            position = Vec3(-0.785, 0.425))
-
-        self.ctrl.ui_magnet = Text(
-            text     = "Magnet   :  OFF  ○",
-            parent   = camera.ui, scale=0.92, color=C_UI_OFF,
-            position = Vec3(-0.785, 0.400))
-
-        self.ctrl.ui_objects = Text(
-            text     = "Objects  :  Idle",
-            parent   = camera.ui, scale=0.92, color=C_UI_WHITE,
-            position = Vec3(-0.785, 0.375))
-
-        Text(text="━" * 30,
-             parent=camera.ui, scale=0.88,
-             color=color.rgba(0, 175, 255, 60),
-             position=Vec3(-0.785, 0.352))
-
-        self.ctrl.ui_fps = Text(
-            text     = "FPS      :  --",
-            parent   = camera.ui, scale=0.82, color=C_UI_DIM,
-            position = Vec3(-0.785, 0.330))
-
-        # Bottom instruction bar
-        Text(
-            text     = "✊ Fist → ON     ✋ Open → OFF     👌 Pinch → Precision",
-            parent   = camera.ui, scale=0.82,
-            color    = color.rgb(90, 160, 210),
-            position = Vec3(-0.76, -0.465))
-
-        Text(text="ESC to exit",
-             parent=camera.ui, scale=0.75,
-             color=C_UI_DIM, position=Vec3(0.58, -0.465))
-
-    # ─────────────── Run ─────────────────────────────────────────
+        Entity(parent=camera.ui,model='quad',color=color.rgba(5,8,22,240),scale=(.50,.40),position=Vec3(-.575,.375,0))
+        Entity(parent=camera.ui,model='quad',color=color.rgba(0,160,255,65),scale=(.502,.402),position=Vec3(-.575,.375,0))
+        Text(text="⚡  MagnoGlove Pro  ⚡",parent=camera.ui,scale=1.35,color=C_UI_TITLE,position=Vec3(-.795,.490))
+        Text(text="━"*32,parent=camera.ui,scale=.85,color=color.rgba(0,170,255,85),position=Vec3(-.795,.465))
+        self.ctrl.ui_gesture=Text(text="Gesture  :  --",parent=camera.ui,scale=.90,color=C_UI_WHITE,position=Vec3(-.795,.440))
+        self.ctrl.ui_magnet=Text(text="Magnet   :  OFF  ○",parent=camera.ui,scale=.90,color=C_UI_OFF,position=Vec3(-.795,.414))
+        self.ctrl.ui_objects=Text(text="Objects  :  Idle  —",parent=camera.ui,scale=.90,color=C_UI_WHITE,position=Vec3(-.795,.388))
+        self.ctrl.ui_voltage=Text(text="Flux     :  0.00 T   Temp : 24°C",parent=camera.ui,scale=.88,color=C_UI_DIM,position=Vec3(-.795,.362))
+        Text(text="━"*32,parent=camera.ui,scale=.85,color=color.rgba(0,170,255,50),position=Vec3(-.795,.340))
+        self.ctrl.ui_fps=Text(text="FPS      :  --",parent=camera.ui,scale=.82,color=C_UI_DIM,position=Vec3(-.795,.318))
+        Text(text="  ✊ Fist=ON     ✋ Open=OFF     👌 Pinch=Precision     ESC=Exit  ",parent=camera.ui,scale=.80,color=color.rgb(75,145,200),position=Vec3(-.77,-.468))
 
     def run(self):
-        """Hand control to the Ursina main loop. Blocks until closed."""
         self.app.run()

@@ -2,835 +2,375 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MagnoGlove – Interactive Preview</title>
+<title>MagnoGlove Pro</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;500;700&family=Orbitron:wght@400;700;900&display=swap');
-
-  :root {
-    --bg:        #060810;
-    --surface:   #0a0d1a;
-    --panel:     #0d1225;
-    --border:    rgba(0,180,255,0.18);
-    --cyan:      #00c8ff;
-    --cyan-dim:  rgba(0,180,255,0.5);
-    --amber:     #ffcc00;
-    --green:     #00ff88;
-    --red:       #ff3c5a;
-    --text:      #c8d8e8;
-    --dim:       #4a5870;
-    --metal:     #b0b8cc;
-    --metal-hi:  #d0e4ff;
-    --table:     #2a1c0e;
-  }
-
-  * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    min-height: 100vh;
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    grid-template-rows: 56px 1fr 56px;
-  }
-
-  /* ── Header ── */
-  header {
-    grid-column: 1/-1;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 24px;
-    background: linear-gradient(90deg, var(--surface) 0%, rgba(0,20,40,0.95) 100%);
-    border-bottom: 1px solid var(--border);
-  }
-  .logo {
-    font-family: 'Orbitron', monospace;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    color: var(--cyan);
-    text-shadow: 0 0 20px var(--cyan-dim);
-  }
-  .logo span { color: var(--amber); }
-  .badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    background: rgba(0,180,255,0.12);
-    border: 1px solid var(--border);
-    padding: 3px 10px;
-    color: var(--cyan-dim);
-    letter-spacing: 2px;
-  }
-  .header-right {
-    margin-left: auto;
-    display: flex;
-    gap: 24px;
-    align-items: center;
-  }
-  .stat { text-align: center; }
-  .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
-  .stat-value { font-size: 13px; font-weight: 700; color: var(--cyan); font-family: 'Orbitron', monospace; }
-
-  /* ── Main Canvas ── */
-  #scene-wrap {
-    position: relative;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  canvas#sim { display: block; width: 100%; height: 100%; }
-
-  /* Grid overlay on canvas */
-  #scene-wrap::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(rgba(0,150,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,150,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  /* ── Side Panel ── */
-  #panel {
-    background: var(--panel);
-    border-left: 1px solid var(--border);
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow-y: auto;
-  }
-
-  .panel-section {
-    background: rgba(0,180,255,0.04);
-    border: 1px solid var(--border);
-    padding: 14px;
-  }
-  .panel-title {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 3px;
-    color: var(--dim);
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .panel-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Status rows */
-  .status-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 13px;
-  }
-  .status-key { color: var(--dim); font-family: 'Share Tech Mono', monospace; font-size: 11px; }
-  .status-val { font-weight: 700; font-family: 'Share Tech Mono', monospace; font-size: 12px; }
-  .val-on     { color: var(--cyan); text-shadow: 0 0 8px var(--cyan-dim); }
-  .val-off    { color: var(--red); }
-  .val-prec   { color: var(--amber); text-shadow: 0 0 8px rgba(255,200,0,0.4); }
-  .val-idle   { color: var(--dim); }
-
-  /* Gesture buttons */
-  .gesture-btn {
-    width: 100%;
-    padding: 11px 12px;
-    background: rgba(0,180,255,0.06);
-    border: 1px solid rgba(0,180,255,0.2);
-    color: var(--text);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-    position: relative;
-    overflow: hidden;
-  }
-  .gesture-btn::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: transparent;
-    transition: background 0.15s;
-  }
-  .gesture-btn:hover { border-color: var(--cyan-dim); background: rgba(0,180,255,0.12); }
-  .gesture-btn.active-on    { border-color: var(--cyan); background: rgba(0,180,255,0.15); color: var(--cyan); }
-  .gesture-btn.active-on::before   { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
-  .gesture-btn.active-off   { border-color: var(--red); background: rgba(255,60,90,0.10); color: var(--red); }
-  .gesture-btn.active-off::before  { background: var(--red); }
-  .gesture-btn.active-prec  { border-color: var(--amber); background: rgba(255,200,0,0.10); color: var(--amber); }
-  .gesture-btn.active-prec::before { background: var(--amber); }
-  .gesture-icon { font-size: 20px; }
-  .gesture-label { flex: 1; }
-  .gesture-tag {
-    font-size: 9px;
-    font-family: 'Share Tech Mono', monospace;
-    padding: 2px 6px;
-    background: rgba(255,255,255,0.05);
-    letter-spacing: 1px;
-  }
-
-  /* Strength meter */
-  .meter-wrap { margin-top: 4px; }
-  .meter-label {
-    display: flex;
-    justify-content: space-between;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--dim);
-    margin-bottom: 6px;
-  }
-  .meter-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.05);
-    position: relative;
-    overflow: hidden;
-  }
-  .meter-fill {
-    height: 100%;
-    width: 0%;
-    background: var(--cyan);
-    box-shadow: 0 0 10px var(--cyan-dim);
-    transition: width 0.3s ease, background 0.3s ease;
-  }
-
-  /* Object indicators */
-  .obj-dots { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-  .obj-dot {
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--metal);
-    border: 1px solid rgba(255,255,255,0.2);
-    transition: all 0.3s ease;
-    position: relative;
-  }
-  .obj-dot.attracted {
-    background: var(--cyan);
-    border-color: var(--cyan);
-    box-shadow: 0 0 8px var(--cyan-dim);
-    animation: pulseDot 0.6s infinite alternate;
-  }
-  @keyframes pulseDot { from { box-shadow: 0 0 4px var(--cyan-dim); } to { box-shadow: 0 0 12px var(--cyan); } }
-
-  /* ── Footer ── */
-  footer {
-    grid-column: 1/-1;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    padding: 0 24px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 10px;
-    color: var(--dim);
-  }
-  footer span { letter-spacing: 2px; }
-  .fps-display { margin-left: auto; color: var(--cyan); }
-
-  /* Scanline overlay */
-  body::after {
-    content: '';
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@200;400;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+:root{--bg0:#03050f;--bg1:#060c1a;--cyan:#00e5ff;--amber:#ffab00;--red:#ff1744;--green:#00e676;--panel:rgba(6,14,30,0.94);--border:rgba(0,180,255,0.14);--text:#c8daf0;--dim:#3d5470;--dimx:#5a7090;}
+*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);}
+body{font-family:'Exo 2',sans-serif;color:var(--text);display:grid;grid-template-columns:1fr 300px;grid-template-rows:52px 1fr 44px;}
+header{grid-column:1/-1;display:flex;align-items:center;background:rgba(3,8,20,0.98);border-bottom:1px solid var(--border);}
+.h-logo{padding:0 20px;display:flex;align-items:center;gap:12px;border-right:1px solid var(--border);height:100%;}
+.logo-text{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;letter-spacing:4px;}
+.logo-text .m{color:var(--cyan)}.logo-text .g{color:var(--amber)}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.h-stats{display:flex;margin-left:auto;}
+.h-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 18px;border-left:1px solid var(--border);height:52px;min-width:90px;}
+.h-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:3px;}
+.h-stat-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;}
+.vc{color:var(--cyan)}.va{color:var(--amber)}.vr{color:var(--red)}.vg{color:var(--green)}.vd{color:var(--dimx)}
+#scene-wrap{position:relative;overflow:hidden;background:var(--bg0);}
+canvas#sim{display:block;width:100%;height:100%;}
+#scene-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);}
+#scene-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(0,3,12,0.65) 100%);}
+#grid-overlay{position:absolute;inset:0;pointer-events:none;z-index:1;background-image:linear-gradient(rgba(0,180,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,255,0.035) 1px,transparent 1px);background-size:60px 60px;}
+#panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.pb{padding:14px 16px;border-bottom:1px solid var(--border);position:relative;}
+.pb::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background 0.3s;}
+.pb.son::before{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+.pb.spr::before{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+.pt{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.pt::after{content:'';flex:1;height:1px;background:var(--border);}
+.gb{width:100%;padding:10px 12px;background:rgba(0,180,255,0.04);border:1px solid rgba(0,180,255,0.12);color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:10px;margin-bottom:6px;position:relative;overflow:hidden;}
+.gb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background 0.12s;}
+.gb:hover{background:rgba(0,180,255,0.09);}
+.gb.on{border-color:var(--cyan);background:rgba(0,229,255,0.08);color:var(--cyan);}
+.gb.on::after{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
+.gb.off{border-color:var(--red);background:rgba(255,23,68,0.08);color:var(--red);}
+.gb.off::after{background:var(--red);}
+.gb.pr{border-color:var(--amber);background:rgba(255,171,0,0.08);color:var(--amber);}
+.gb.pr::after{background:var(--amber);box-shadow:0 0 6px var(--amber);}
+.gi{font-size:18px;width:24px;text-align:center;}.gl{flex:1;text-align:left;}
+.gt{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);letter-spacing:1px;}
+.sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;}
+.sk{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);}
+.sv{font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:600;}
+.son{color:var(--cyan)}.sof{color:var(--red)}.spr{color:var(--amber)}.sid{color:var(--dimx)}.sgn{color:var(--green)}
+.mtr{height:4px;background:rgba(255,255,255,0.05);margin-top:8px;overflow:hidden;}
+.mf{height:100%;width:0%;transition:width 0.25s ease,background 0.25s;}
+.ml{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:4px;}
+#osc-canvas{display:block;width:100%;height:52px;margin-top:8px;}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px;}
+.rc{background:rgba(0,0,0,0.3);border:1px solid var(--border);padding:7px 8px;}
+.rl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:3px;}
+.rv{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:600;color:var(--cyan);}
+.rv.a{color:var(--amber)}.rv.g{color:var(--green)}.rv.d{color:var(--dimx)}
+.og{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.oc{display:flex;align-items:center;gap:5px;padding:3px 7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dimx);transition:all 0.2s;letter-spacing:0.5px;}
+.od{width:6px;height:6px;border-radius:50%;background:var(--dimx);transition:all 0.2s;}
+.oc.lv{color:var(--cyan);border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.06);}
+.oc.lv .od{background:var(--cyan);box-shadow:0 0 5px var(--cyan);}
+.oc.lp{color:var(--amber);border-color:rgba(255,171,0,0.3);background:rgba(255,171,0,0.06);}
+.oc.lp .od{background:var(--amber);box-shadow:0 0 5px var(--amber);}
+footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:16px;background:rgba(3,8,20,0.98);border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:2px;}
+.flv{color:var(--green);animation:blink 1.4s infinite;}.ffps{margin-left:auto;color:var(--cyan);}
+#panel::-webkit-scrollbar{width:3px;}#panel::-webkit-scrollbar-thumb{background:var(--dim);}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">MAGNO<span>GLOVE</span></div>
-  <div class="badge">MVP DEMO v1.0</div>
-  <div class="header-right">
-    <div class="stat">
-      <div class="stat-label">MODULE</div>
-      <div class="stat-value" id="hdr-module">CV+3D</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">GESTURE</div>
-      <div class="stat-value" id="hdr-gesture" style="color:var(--dim)">--</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">MAGNET</div>
-      <div class="stat-value" id="hdr-magnet" style="color:var(--red)">OFF</div>
-    </div>
+  <div class="h-logo">
+    <div class="logo-text"><span class="m">MAGNO</span><span class="g">GLOVE</span></div>
+    <div class="logo-dot"></div>
+  </div>
+  <div class="h-stats">
+    <div class="h-stat"><div class="h-stat-label">GESTURE</div><div class="h-stat-val vd" id="hg">NONE</div></div>
+    <div class="h-stat"><div class="h-stat-label">MAGNET</div><div class="h-stat-val vr" id="hm">OFF</div></div>
+    <div class="h-stat"><div class="h-stat-label">FLUX</div><div class="h-stat-val vc" id="hs">0.00 T</div></div>
+    <div class="h-stat"><div class="h-stat-label">OBJECTS</div><div class="h-stat-val vg" id="ho">10 idle</div></div>
+    <div class="h-stat"><div class="h-stat-label">POWER</div><div class="h-stat-val vd" id="hw">0 W</div></div>
   </div>
 </header>
-
-<div id="scene-wrap">
-  <canvas id="sim"></canvas>
-</div>
-
+<div id="scene-wrap"><div id="grid-overlay"></div><canvas id="sim"></canvas></div>
 <div id="panel">
-
-  <div class="panel-section">
-    <div class="panel-title">GESTURE CONTROL</div>
-    <button class="gesture-btn active-off" id="btn-open" onclick="setGesture('open')">
-      <span class="gesture-icon">✋</span>
-      <span class="gesture-label">OPEN HAND</span>
-      <span class="gesture-tag">OFF</span>
-    </button>
-    <button class="gesture-btn" id="btn-fist" onclick="setGesture('fist')">
-      <span class="gesture-icon">✊</span>
-      <span class="gesture-label">CLOSED FIST</span>
-      <span class="gesture-tag">ON</span>
-    </button>
-    <button class="gesture-btn" id="btn-pinch" onclick="setGesture('pinch')">
-      <span class="gesture-icon">👌</span>
-      <span class="gesture-label">PINCH</span>
-      <span class="gesture-tag">PRECISION</span>
-    </button>
+  <div class="pb" id="pb-g">
+    <div class="pt">GESTURE CONTROL</div>
+    <button class="gb off" id="gb-o" onclick="setGesture('open')"><span class="gi">✋</span><span class="gl">OPEN HAND</span><span class="gt">RELEASE</span></button>
+    <button class="gb" id="gb-f" onclick="setGesture('fist')"><span class="gi">✊</span><span class="gl">CLOSED FIST</span><span class="gt">FULL POWER</span></button>
+    <button class="gb" id="gb-p" onclick="setGesture('pinch')"><span class="gi">👌</span><span class="gl">PINCH GESTURE</span><span class="gt">PRECISION</span></button>
   </div>
-
-  <div class="panel-section">
-    <div class="panel-title">SYSTEM STATUS</div>
-    <div class="status-row">
-      <span class="status-key">GESTURE</span>
-      <span class="status-val val-idle" id="st-gesture">OPEN_HAND</span>
-    </div>
-    <div class="status-row">
-      <span class="status-key">MAGNET</span>
-      <span class="status-val val-off" id="st-magnet">OFF</span>
-    </div>
-    <div class="status-row">
-      <span class="status-key">OBJECTS</span>
-      <span class="status-val val-idle" id="st-objects">IDLE</span>
-    </div>
-    <div class="status-row">
-      <span class="status-key">STRENGTH</span>
-      <span class="status-val val-idle" id="st-strength">0.00</span>
-    </div>
-    <div class="meter-wrap">
-      <div class="meter-label"><span>FIELD STRENGTH</span><span id="meter-pct">0%</span></div>
-      <div class="meter-bar"><div class="meter-fill" id="meter-fill"></div></div>
-    </div>
+  <div class="pb" id="pb-s">
+    <div class="pt">SYSTEM STATUS</div>
+    <div class="sr"><span class="sk">GESTURE STATE</span><span class="sv sid" id="st-g">OPEN_HAND</span></div>
+    <div class="sr"><span class="sk">MAGNET STATE</span><span class="sv sof" id="st-m">OFF</span></div>
+    <div class="sr"><span class="sk">ATTRACTED</span><span class="sv sid" id="st-o">IDLE</span></div>
+    <div class="sr"><span class="sk">PULL RADIUS</span><span class="sv sid" id="st-r">0.0 m</span></div>
+    <div class="ml"><span>FIELD STRENGTH</span><span id="mt-p">0%</span></div>
+    <div class="mtr"><div class="mf" id="mf"></div></div>
   </div>
-
-  <div class="panel-section">
-    <div class="panel-title">METAL OBJECTS</div>
-    <div class="obj-dots" id="obj-dots"></div>
+  <div class="pb">
+    <div class="pt">TELEMETRY</div>
+    <div class="rg">
+      <div class="rc"><div class="rl">VOLTAGE</div><div class="rv d" id="rc-v">0.0 V</div></div>
+      <div class="rc"><div class="rl">CURRENT</div><div class="rv d" id="rc-a">0.00 A</div></div>
+      <div class="rc"><div class="rl">FLUX DENSITY</div><div class="rv d" id="rc-t">0.00 T</div></div>
+      <div class="rc"><div class="rl">COIL TEMP</div><div class="rv g" id="rc-tmp">24°C</div></div>
+    </div>
+    <canvas id="osc-canvas"></canvas>
   </div>
-
-  <div class="panel-section">
-    <div class="panel-title">TECH STACK</div>
-    <div class="status-row"><span class="status-key">VISION</span><span class="status-val" style="color:var(--text);font-size:10px">OpenCV + MediaPipe</span></div>
-    <div class="status-row"><span class="status-key">RENDER</span><span class="status-val" style="color:var(--text);font-size:10px">Ursina Engine</span></div>
-    <div class="status-row"><span class="status-key">LANG</span><span class="status-val" style="color:var(--text);font-size:10px">Python 3.9+</span></div>
-    <div class="status-row"><span class="status-key">THREAD</span><span class="status-val" style="color:var(--green);font-size:10px">LIVE ●</span></div>
+  <div class="pb">
+    <div class="pt">OBJECT INVENTORY</div>
+    <div class="og" id="obj-grid"></div>
   </div>
-
+  <div class="pb">
+    <div class="pt">MODULE INFO</div>
+    <div class="sr"><span class="sk">CV ENGINE</span><span class="sv sgn">MediaPipe v0.10</span></div>
+    <div class="sr"><span class="sk">RENDERER</span><span class="sv sgn">Ursina Engine</span></div>
+    <div class="sr"><span class="sk">LANGUAGE</span><span class="sv" style="color:var(--text)">Python 3.9+</span></div>
+    <div class="sr"><span class="sk">THREAD</span><span class="sv sgn">RUNNING ●</span></div>
+    <div class="sr"><span class="sk">FPS TARGET</span><span class="sv son" id="st-fps">--</span></div>
+  </div>
 </div>
-
 <footer>
-  <span>ELECTROMAGNETIC SIMULATION</span>
-  <span>⚡</span>
-  <span>AI/ML ENGINEERING DEMO</span>
-  <span class="fps-display" id="fps-display">FPS: --</span>
+  <span class="flv">● LIVE</span><span>|</span>
+  <span>ELECTROMAGNETIC SIMULATION ENGINE</span><span>|</span>
+  <span>MagnoGlove MVP v2.0</span><span>|</span>
+  <span>AI / ML ENGINEERING DEPT</span>
+  <span class="ffps" id="f-fps">60 FPS</span>
 </footer>
-
 <script>
-// ─────────────────────────────────────────────────────────────────
-//  MagnoGlove – Interactive Canvas Simulation
-//  Mimics the Ursina 3D scene in 2.5D canvas form
-// ─────────────────────────────────────────────────────────────────
+const canvas=document.getElementById('sim'),ctx=canvas.getContext('2d');
+const osc=document.getElementById('osc-canvas'),octx=osc.getContext('2d');
+let gesture='open',magnetState='OFF',magnetStr=0,targetStr=0;
+let ringT=0,pulseT=0,arcT=0,starT=0,frameCount=0,lastFPS=performance.now(),fps=60,lastTime=0;
+let oscHist=new Array(120).fill(0),tempVal=24,particles=[],stars=[];
 
-const canvas = document.getElementById('sim');
-const ctx    = canvas.getContext('2d');
+const OBJ_TYPES=[
+  {id:'SPHERE',   label:'Fe Sphere', c:['#d0d8f0','#8890b8','#1c1c30']},
+  {id:'HEX_BOLT', label:'Hex Bolt',  c:['#e0e8f8','#9098c0','#202038']},
+  {id:'SCREW',    label:'M6 Screw',  c:['#c8d4e8','#787898','#181830']},
+  {id:'PLATE',    label:'Fe Plate',  c:['#d8dce8','#888a98','#202028']},
+  {id:'COIN',     label:'Cu Disk',   c:['#f0d890','#c09840','#504020']},
+  {id:'ROD',      label:'Steel Rod', c:['#dce0f0','#9094b0','#282840']},
+  {id:'WASHER',   label:'Washer',    c:['#d4d8ec','#8488a8','#242440']},
+  {id:'SHARD',    label:'Fe Shard',  c:['#e8dce0','#a09098','#302028']},
+  {id:'NUT',      label:'Hex Nut',   c:['#dce8e0','#8aa898','#202830']},
+  {id:'CAP',      label:'Cap Screw', c:['#e4dce8','#a090a8','#302030']},
+];
 
-// ── State ─────────────────────────────────────────────────────────
-let gesture      = 'open';   // 'open' | 'fist' | 'pinch'
-let magnetState  = 'OFF';
-let magnetStr    = 0.0;
-let targetStr    = 0.0;
-let ringTimer    = 0;
-let pulseTimer   = 0;
-let frameCount   = 0;
-let lastFPSTime  = performance.now();
-let fpsDisplay   = 60;
-
-// ── Metal Objects ─────────────────────────────────────────────────
-const NUM_OBJS = 7;
-let objects = [];
-
-function initObjects(cx, tableY) {
-  objects = [];
-  const spread = [
-    [-3.2, 0.8],[-1.6, -0.6],[0, 1.2],[1.5, -0.2],[3.2, 0.6],[-2.0, -1.2],[2.2, -1.0]
-  ];
-  spread.forEach(([dx, dz]) => {
-    objects.push({
-      x: cx + dx * 32, y: tableY - 10,
-      rx: cx + dx * 32, ry: tableY - 10,   // rest
-      vx: 0, vy: 0,
-      r: 10,
-      attached: false,
-      spin: Math.random() * Math.PI * 2,
-      z: 1 + Math.abs(dz) * 0.15,          // fake depth for 2.5D
-    });
+let objects=[];
+function initObjects(cx,tY){
+  const pos=[[-3.8,0.5],[-2.4,-0.9],[-1.0,1.3],[0.2,-1.5],[1.5,0.9],[2.8,-0.6],[-2.2,1.9],[1.0,2.1],[3.6,1.6],[-0.4,-2.3]];
+  objects=OBJ_TYPES.map((t,i)=>{
+    const[dx,dz]=pos[i];
+    return{type:t.id,label:t.label,color:t.c,x:cx+dx*28,y:tY-8,rx:cx+dx*28,ry:tY-8,vx:0,vy:0,attached:false,spin:Math.random()*Math.PI*2,spinV:(Math.random()-0.5)*0.8,z:1+Math.abs(dz)*0.07,trail:[],idx:i};
   });
 }
+function initStars(W,H){stars=Array.from({length:55},()=>({x:Math.random()*W,y:Math.random()*H*0.68,r:Math.random()*1.1+0.2,a:Math.random()*0.35+0.08,fl:Math.random()*Math.PI*2}));}
 
-// ── Gesture Control ───────────────────────────────────────────────
-function setGesture(g) {
-  gesture = g;
-
-  document.querySelectorAll('.gesture-btn').forEach(b => {
-    b.className = 'gesture-btn';
-  });
-
-  if (g === 'fist') {
-    targetStr = 1.0;
-    magnetState = 'ON';
-    document.getElementById('btn-fist').classList.add('active-on');
-    document.getElementById('hdr-magnet').style.color = 'var(--cyan)';
-    document.getElementById('hdr-magnet').textContent = 'ON';
-    document.getElementById('hdr-gesture').style.color = 'var(--cyan)';
-    document.getElementById('hdr-gesture').textContent = 'FIST';
-    document.getElementById('st-magnet').className = 'status-val val-on';
-    document.getElementById('st-magnet').textContent = 'ON';
-    document.getElementById('st-gesture').textContent = 'CLOSED_FIST';
-    document.getElementById('st-gesture').className = 'status-val val-on';
-  } else if (g === 'pinch') {
-    targetStr = 0.35;
-    magnetState = 'PRECISION';
-    document.getElementById('btn-pinch').classList.add('active-prec');
-    document.getElementById('hdr-magnet').style.color = 'var(--amber)';
-    document.getElementById('hdr-magnet').textContent = 'PREC';
-    document.getElementById('hdr-gesture').style.color = 'var(--amber)';
-    document.getElementById('hdr-gesture').textContent = 'PINCH';
-    document.getElementById('st-magnet').className = 'status-val val-prec';
-    document.getElementById('st-magnet').textContent = 'PRECISION';
-    document.getElementById('st-gesture').textContent = 'PINCH';
-    document.getElementById('st-gesture').className = 'status-val val-prec';
-  } else {
-    targetStr = 0.0;
-    magnetState = 'OFF';
-    document.getElementById('btn-open').classList.add('active-off');
-    document.getElementById('hdr-magnet').style.color = 'var(--red)';
-    document.getElementById('hdr-magnet').textContent = 'OFF';
-    document.getElementById('hdr-gesture').style.color = 'var(--dim)';
-    document.getElementById('hdr-gesture').textContent = 'OPEN';
-    document.getElementById('st-magnet').className = 'status-val val-off';
-    document.getElementById('st-magnet').textContent = 'OFF';
-    document.getElementById('st-gesture').textContent = 'OPEN_HAND';
-    document.getElementById('st-gesture').className = 'status-val val-idle';
+let prevG=null;
+function setGesture(g){
+  prevG=gesture; gesture=g;
+  document.querySelectorAll('.gb').forEach(b=>b.className='gb');
+  const W=canvas.width,H=canvas.height,gX=W/2,gY=H*0.2;
+  ['pb-g','pb-s'].forEach(id=>{const e=document.getElementById(id);e.classList.remove('son','spr');});
+  if(g==='fist'){
+    targetStr=1.0;magnetState='ON';
+    document.getElementById('gb-f').classList.add('on');
+    ['pb-g','pb-s'].forEach(id=>document.getElementById(id).classList.add('son'));
+    setHdr('hm','ON','vc');setHdr('hg','FIST','vc');
+    if(prevG!=='fist')spawnParticles(gX,gY);
+  }else if(g==='pinch'){
+    targetStr=0.35;magnetState='PRECISION';
+    document.getElementById('gb-p').classList.add('pr');
+    ['pb-g','pb-s'].forEach(id=>document.getElementById(id).classList.add('spr'));
+    setHdr('hm','PREC','va');setHdr('hg','PINCH','va');
+    if(prevG!=='pinch')spawnParticles(gX,gY);
+  }else{
+    targetStr=0.0;magnetState='OFF';
+    document.getElementById('gb-o').classList.add('off');
+    setHdr('hm','OFF','vr');setHdr('hg','OPEN','vd');
   }
 }
-
-// ── Object dots in side panel ──────────────────────────────────────
-function buildDots() {
-  const wrap = document.getElementById('obj-dots');
-  wrap.innerHTML = '';
-  objects.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'obj-dot';
-    d.id = `dot-${i}`;
-    wrap.appendChild(d);
-  });
+function setHdr(id,txt,cls){const e=document.getElementById(id);e.textContent=txt;e.className='h-stat-val '+cls;}
+function spawnParticles(gX,gY){
+  const col=magnetState==='ON'?[0,229,255]:[255,171,0];
+  for(let i=0;i<32;i++){const a=(i/32)*Math.PI*2+Math.random()*0.2,s=70+Math.random()*130;particles.push({x:gX,y:gY,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0.5+Math.random()*0.4,ml:0.9,r:1.5+Math.random()*2.5,col});}
 }
 
-function updateDots() {
-  let attracted = 0;
-  objects.forEach((o, i) => {
-    const d = document.getElementById(`dot-${i}`);
-    if (!d) return;
-    if (o.attached) {
-      d.classList.add('attracted');
-      attracted++;
-    } else {
-      d.classList.remove('attracted');
-    }
-  });
-  const objEl = document.getElementById('st-objects');
-  if (attracted > 0) {
-    objEl.textContent = `${attracted} ATTRACTED`;
-    objEl.className = 'status-val val-on';
-  } else if (magnetStr > 0.05) {
-    objEl.textContent = 'APPROACHING';
-    objEl.className = 'status-val val-prec';
-  } else {
-    objEl.textContent = 'IDLE';
-    objEl.className = 'status-val val-idle';
+function buildInventory(){
+  const w=document.getElementById('obj-grid');w.innerHTML='';
+  objects.forEach((o,i)=>{const d=document.createElement('div');d.className='oc';d.id='chip-'+i;d.innerHTML=`<div class="od"></div>${o.label.split(' ')[0]}`;w.appendChild(d);});
+}
+function updateInventory(){
+  let att=0;
+  objects.forEach((o,i)=>{const c=document.getElementById('chip-'+i);if(!c)return;if(o.attached){c.className='oc '+(magnetState==='ON'?'lv':'lp');att++;}else c.className='oc';});
+  const n=objects.length;
+  document.getElementById('ho').textContent=att?`${att}/${n} held`:`${n} idle`;
+  document.getElementById('ho').className='h-stat-val '+(att?'vc':'vg');
+  const st=document.getElementById('st-o');
+  if(att){st.textContent=att+' ATTRACTED';st.className='sv son';}
+  else if(magnetStr>0.05){st.textContent='APPROACHING';st.className='sv spr';}
+  else{st.textContent='IDLE';st.className='sv sid';}
+}
+function updateTelemetry(dt){
+  const V=magnetStr*(magnetState==='ON'?24:8.4),A=magnetStr*(magnetState==='ON'?3.2:1.1),P=V*A,T=magnetStr*(magnetState==='ON'?0.85:0.30);
+  tempVal+=(24+P*0.6-tempVal)*dt*0.4;
+  const vc=magnetStr>0.05?(magnetState==='ON'?'':'a'):'d';
+  setText('rc-v',V.toFixed(1)+' V','rv '+vc);setText('rc-a',A.toFixed(2)+' A','rv '+vc);setText('rc-t',T.toFixed(2)+' T','rv '+vc);
+  setText('rc-tmp',tempVal.toFixed(0)+'°C','rv '+(tempVal>35?'a':'g'));
+  document.getElementById('hw').textContent=Math.round(P)+' W';
+  document.getElementById('hw').className='h-stat-val '+(P>5?(magnetState==='ON'?'vc':'va'):'vd');
+  document.getElementById('hs').textContent=T.toFixed(2)+' T';
+  document.getElementById('st-r').textContent=(magnetStr*(magnetState==='ON'?9.0:3.8)).toFixed(1)+' m';
+  const noise=magnetStr>0.05?(Math.sin(pulseT*12)*0.3+Math.sin(pulseT*7.3)*0.12+Math.random()*0.06):Math.random()*0.03-0.015;
+  oscHist.push(magnetStr*noise);oscHist.shift();drawOsc();
+}
+function setText(id,txt,cls){const e=document.getElementById(id);e.textContent=txt;if(cls)e.className=cls;}
+function drawOsc(){
+  const W=osc.width,H=osc.height;octx.clearRect(0,0,W,H);octx.fillStyle='rgba(0,0,0,0.55)';octx.fillRect(0,0,W,H);
+  octx.strokeStyle='rgba(0,100,150,0.25)';octx.lineWidth=0.5;
+  [0.25,0.5,0.75].forEach(f=>{octx.beginPath();octx.moveTo(0,H*f);octx.lineTo(W,H*f);octx.stroke();octx.beginPath();octx.moveTo(W*f,0);octx.lineTo(W*f,H);octx.stroke();});
+  const col=magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1e3050';
+  octx.strokeStyle=col;octx.lineWidth=1.5;octx.shadowColor=col;octx.shadowBlur=magnetStr>0.05?5:0;
+  octx.beginPath();oscHist.forEach((v,i)=>{const x=(i/oscHist.length)*W,y=H/2-v*H*1.9;i===0?octx.moveTo(x,y):octx.lineTo(x,y);});octx.stroke();octx.shadowBlur=0;
+}
+
+function metalGrad(ctx,r,c1,c2,c3){const g=ctx.createRadialGradient(-r*.3,-r*.35,r*.04,0,0,r);g.addColorStop(0,c1);g.addColorStop(0.55,c2);g.addColorStop(1,c3);return g;}
+
+function drawObject(o,t){
+  const r=11*o.z;const[c1,c2,c3]=o.color;const gc=magnetState==='ON'?'#00e5ff':'#ffab00';
+  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.spin);
+  if(t>0.15){ctx.shadowColor=gc;ctx.shadowBlur=14*t;}
+  switch(o.type){
+    case'SPHERE':drawSphere(r,c1,c2,c3);break;case'HEX_BOLT':drawHexBolt(r,c1,c2,c3);break;
+    case'SCREW':drawScrew(r,c1,c2,c3);break;case'PLATE':drawPlate(r,c1,c2,c3);break;
+    case'COIN':drawCoin(r,c1,c2,c3);break;case'ROD':drawRod(r,c1,c2,c3);break;
+    case'WASHER':drawWasher(r,c1,c2,c3);break;case'SHARD':drawShard(r,c1,c2,c3);break;
+    case'NUT':drawNut(r,c1,c2,c3);break;case'CAP':drawCap(r,c1,c2,c3);break;
   }
+  if(r>8){ctx.shadowBlur=0;ctx.rotate(-o.spin);ctx.font=`${Math.round(8*o.z)}px 'Share Tech Mono'`;ctx.textAlign='center';ctx.fillStyle=t>0.25?gc:'rgba(60,100,140,0.5)';ctx.fillText(o.label,0,r+12);}
+  ctx.restore();
 }
+function drawSphere(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;ctx.stroke();ctx.beginPath();ctx.arc(-r*.28,-r*.32,r*.2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.16)';ctx.fill();}
+function drawHexBolt(r,c1,c2,c3){const R=r*.94;ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R):ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*r*.35,Math.sin(a)*r*.35):ctx.lineTo(Math.cos(a)*r*.35,Math.sin(a)*r*.35);}ctx.closePath();ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fill();ctx.fillStyle=c2;ctx.fillRect(-r*.17,r*.88,r*.34,r*.75);for(let i=0;i<4;i++){ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(-r*.17,r*.88+i*r*.19,r*.34,r*.08);}}
+function drawScrew(r,c1,c2,c3){ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=r*.12;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-r*.42,0);ctx.lineTo(r*.42,0);ctx.stroke();ctx.beginPath();ctx.moveTo(0,-r*.42);ctx.lineTo(0,r*.42);ctx.stroke();const sg=ctx.createLinearGradient(-r*.18,0,r*.18,0);sg.addColorStop(0,c3);sg.addColorStop(.4,c1);sg.addColorStop(1,c3);ctx.fillStyle=sg;ctx.fillRect(-r*.17,r,r*.34,r*.9);ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=0.8;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(-r*.17,r+i*r*.18);ctx.lineTo(r*.17,r+i*r*.18+r*.06);ctx.stroke();}}
+function drawPlate(r,c1,c2,c3){const W=r*1.9,H=r*.6;const pg=ctx.createLinearGradient(0,-H/2,0,H/2);pg.addColorStop(0,c1);pg.addColorStop(.5,c2);pg.addColorStop(1,c3);ctx.fillStyle=pg;ctx.beginPath();ctx.moveTo(-W/2+3,-H/2);ctx.lineTo(W/2-3,-H/2);ctx.lineTo(W/2,-H/2+3);ctx.lineTo(W/2,H/2-3);ctx.lineTo(W/2-3,H/2);ctx.lineTo(-W/2+3,H/2);ctx.lineTo(-W/2,H/2-3);ctx.lineTo(-W/2,-H/2+3);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.8;ctx.stroke();[[-W/2+5,0],[W/2-5,0]].forEach(([rx,ry])=>{ctx.beginPath();ctx.arc(rx,ry,2.2,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=0.5;ctx.stroke();});}
+function drawCoin(r,c1,c2,c3){const eg=ctx.createRadialGradient(0,0,r*.3,0,0,r);eg.addColorStop(0,c1);eg.addColorStop(.7,c2);eg.addColorStop(1,c3);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=eg;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,r-1.5,0,Math.PI*2);ctx.stroke();for(let i=0;i<18;i++){const a=i*Math.PI*2/18;ctx.beginPath();ctx.arc(Math.cos(a)*(r-1),Math.sin(a)*(r-1),.7,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fill();}ctx.beginPath();ctx.arc(0,0,r*.38,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.12)';ctx.fill();}
+function drawRod(r,c1,c2,c3){const H=r*2.2,W=r*.42;const rg=ctx.createLinearGradient(-W/2,0,W/2,0);rg.addColorStop(0,c3);rg.addColorStop(.3,c1);rg.addColorStop(.7,c2);rg.addColorStop(1,c3);ctx.fillStyle=rg;ctx.beginPath();ctx.roundRect(-W/2,-H/2,W,H,3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=0.5;ctx.stroke();[-H/2,H/2].forEach(y=>{ctx.beginPath();ctx.ellipse(0,y,W/2,W/4,0,0,Math.PI*2);ctx.fillStyle=y<0?c1:c3;ctx.fill();});}
+function drawWasher(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.42,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.78)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.5;ctx.beginPath();ctx.arc(0,0,r*.4,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.44,Math.sin(a)*r*.44);ctx.lineTo(Math.cos(a)*r*.88,Math.sin(a)*r*.88);ctx.stroke();}}
+function drawShard(r,c1,c2,c3){const pts=[[0,-r*1.1],[r*.55,-r*.2],[r*.88,r*.58],[r*.2,r*.9],[-r*.5,r*.5],[-r*.84,r*.1],[-r*.3,-r*.8]];ctx.beginPath();pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.4;[[0,-r*1.1],[r*.88,r*.58],[-r*.84,r*.1]].forEach(([x,y])=>{ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.stroke();});}
+function drawNut(r,c1,c2,c3){ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.4,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fill();[r*.38,r*.31].forEach(rr=>{ctx.beginPath();ctx.arc(0,0,rr,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.09)';ctx.lineWidth=0.5;ctx.stroke();});}
+function drawCap(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;ctx.stroke();[.65,.45].forEach(f=>{ctx.beginPath();ctx.arc(0,0,r*f,0,Math.PI*2);ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=0.8;ctx.stroke();});for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.15,Math.sin(a)*r*.15);ctx.lineTo(Math.cos(a)*r*.4,Math.sin(a)*r*.4);ctx.strokeStyle='rgba(0,0,0,0.48)';ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();}const shG=ctx.createLinearGradient(-r*.15,0,r*.15,0);shG.addColorStop(0,c3);shG.addColorStop(.5,c1);shG.addColorStop(1,c3);ctx.fillStyle=shG;ctx.fillRect(-r*.15,r,r*.3,r*.9);}
 
-// ─────────────────────────────────────────────────────────────────
-//  Main Render Loop
-// ─────────────────────────────────────────────────────────────────
-
-let lastTime = 0;
-
-function render(now) {
+function render(now){
   requestAnimationFrame(render);
-
-  const dt = Math.min((now - lastTime) / 1000, 0.05);
-  lastTime = now;
-  ringTimer  += dt;
-  pulseTimer += dt;
-
-  // FPS
+  const dt=Math.min((now-lastTime)/1000,0.05);lastTime=now;
+  ringT+=dt;pulseT+=dt;arcT+=dt;starT+=dt;
   frameCount++;
-  if (now - lastFPSTime > 500) {
-    fpsDisplay = Math.round(frameCount / ((now - lastFPSTime) / 1000));
-    frameCount = 0;
-    lastFPSTime = now;
-    document.getElementById('fps-display').textContent = `FPS: ${fpsDisplay}`;
-    document.getElementById('hdr-module').textContent = `CV+3D`;
-  }
+  if(now-lastFPS>600){fps=Math.round(frameCount/((now-lastFPS)/1000));frameCount=0;lastFPS=now;document.getElementById('st-fps').textContent=fps;document.getElementById('f-fps').textContent=fps+' FPS';}
+  magnetStr+=(targetStr-magnetStr)*Math.min(dt*7,1);
+  updateTelemetry(dt);updateInventory();
+  const pct=Math.round(magnetStr*100);document.getElementById('mt-p').textContent=pct+'%';
+  const mf=document.getElementById('mf');mf.style.width=pct+'%';mf.style.background=magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1e3555';
+  const stg=document.getElementById('st-g');stg.textContent=gesture==='fist'?'CLOSED_FIST':gesture==='pinch'?'PINCH':'OPEN_HAND';stg.className='sv '+(gesture==='fist'?'son':gesture==='pinch'?'spr':'sid');
+  const stm=document.getElementById('st-m');stm.textContent=magnetState;stm.className='sv '+(magnetState==='ON'?'son':magnetState==='PRECISION'?'spr':'sof');
+  const wrap=document.getElementById('scene-wrap');
+  if(canvas.width!==wrap.clientWidth||canvas.height!==wrap.clientHeight){canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);osc.width=osc.parentElement.clientWidth-32;osc.height=52;}
+  const W=canvas.width,H=canvas.height,gX=W/2,gY=H*.2,tY=H*.72;
 
-  // Smooth magnet strength
-  magnetStr += (targetStr - magnetStr) * Math.min(dt * 6, 1);
-
-  // Update UI meters
-  const pct = Math.round(magnetStr * 100);
-  document.getElementById('st-strength').textContent = magnetStr.toFixed(2);
-  document.getElementById('meter-pct').textContent = `${pct}%`;
-  const fill = document.getElementById('meter-fill');
-  fill.style.width = `${pct}%`;
-  if (magnetState === 'ON')        fill.style.background = 'var(--cyan)';
-  else if (magnetState === 'PRECISION') fill.style.background = 'var(--amber)';
-  else                             fill.style.background = 'var(--dim)';
-
-  // Canvas resize
-  const wrap = document.getElementById('scene-wrap');
-  canvas.width  = wrap.clientWidth;
-  canvas.height = wrap.clientHeight;
-
-  const W = canvas.width, H = canvas.height;
-  const cx = W / 2;
-  const gloveY = H * 0.22;
-  const tableY = H * 0.72;
-  const gloveX = cx;
-
-  // ── Physics update ───────────────────────────────────────────
-  objects.forEach((o, idx) => {
-    if (magnetStr > 0.02) {
-      const dx = gloveX - o.x, dy = gloveY - o.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 22) {
-        // Attached
-        const sp = (idx - NUM_OBJS/2) * 22;
-        o.x += (gloveX + sp - o.x) * Math.min(dt * 9, 1);
-        o.y += (gloveY + 32 - o.y) * Math.min(dt * 9, 1);
-        o.vx = 0; o.vy = 0;
-        o.attached = true;
-        o.spin += 3.5 * dt;
-      } else {
-        // Attract
-        const pullSpeed = (magnetStr * (magnetState === 'ON' ? 280 : 110)) / (dist * 0.4 + 0.6);
-        o.vx += (dx / dist) * pullSpeed * dt;
-        o.vy += (dy / dist) * pullSpeed * dt;
-        o.vx *= 0.85; o.vy *= 0.85;
-        o.x += o.vx * dt;
-        o.y += o.vy * dt;
-        o.attached = false;
-      }
-    } else {
-      // Gravity
-      o.attached = false;
-      if (o.y < tableY - 10) {
-        o.vy += 380 * dt;
-        o.x  += o.vx * dt;
-        o.y  += o.vy * dt;
-        o.vx *= 0.97;
-        if (o.y >= tableY - 10) {
-          o.y = tableY - 10;
-          o.vy = 0; o.vx = 0;
-        }
-      } else {
-        o.x += (o.rx - o.x) * Math.min(dt * 2.0, 1);
-        o.y  = tableY - 10;
-        o.vy = 0; o.vx = 0;
-      }
+  // Physics
+  objects.forEach((o,idx)=>{
+    if(magnetStr>0.02){
+      const dx=gX-o.x,dy=gY-o.y,dist=Math.sqrt(dx*dx+dy*dy);
+      const maxR=magnetState==='ON'?255:125;
+      if(dist<22){
+        const col=idx%5,row=Math.floor(idx/5);
+        const tx=gX+(col-2)*21,ty=gY+28+row*21;
+        o.x+=(tx-o.x)*Math.min(dt*10,1);o.y+=(ty-o.y)*Math.min(dt*10,1);
+        o.vx=0;o.vy=0;o.attached=true;
+        o.spin+=(magnetState==='ON'?175:88)*dt*(Math.PI/180);
+        if(!o.wasAttached){o.trail=[];o.wasAttached=true;}
+      } else if(dist<maxR){
+        if(!o.attached&&magnetStr>0.05){o.trail.push({x:o.x,y:o.y});if(o.trail.length>10)o.trail.shift();}
+        const spd=(magnetStr*(magnetState==='ON'?295:115))/(dist*.4+.6);
+        o.vx+=(dx/dist)*spd*dt;o.vy+=(dy/dist)*spd*dt;o.vx*=0.84;o.vy*=0.84;
+        o.x+=o.vx*dt;o.y+=o.vy*dt;o.attached=false;o.wasAttached=false;
+      } else{o.vx*=.96;o.vy*=.96;o.attached=false;}
+    } else{
+      o.attached=false;o.wasAttached=false;o.trail=[];
+      if(o.y<tY-8){o.vy+=410*dt;o.vy=Math.min(o.vy,480);o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=.97;if(o.y>=tY-8){o.y=tY-8;o.vy*=-.25;o.vx*=.65;}}
+      else{o.y=tY-8;o.x+=(o.rx-o.x)*Math.min(dt*1.9,1);o.vx*=.88;o.vy=0;}
+      o.spin+=o.spinV*.2*dt;
     }
   });
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=190*dt;p.vx*=.93;p.vy*=.93;p.life-=dt;});
 
-  // ── DRAW ────────────────────────────────────────────────────
-  ctx.clearRect(0, 0, W, H);
+  // Draw background
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#03050f');bg.addColorStop(.6,'#060c1a');bg.addColorStop(1,'#070e1c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  stars.forEach(s=>{const f=.6+.4*Math.sin(starT*1.8+s.fl);ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(170,200,255,${s.a*f})`;ctx.fill();});
 
-  // Background gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, '#060810');
-  bgGrad.addColorStop(1, '#08101c');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
+  // Magnetic field
+  if(magnetStr>0.01){
+    const isOn=magnetState==='ON',rgb=isOn?'0,229,255':'255,171,0';
+    const maxR=isOn?162*magnetStr:85*magnetStr;
+    // Dashed radial lines
+    const nL=isOn?12:8;
+    for(let i=0;i<nL;i++){const ang=(i/nL)*Math.PI*2+ringT*.25,ll=maxR*(.65+.35*Math.sin(pulseT*2.3+i));ctx.save();ctx.globalAlpha=.11*magnetStr;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=.8;ctx.setLineDash([4,9]);ctx.lineDashOffset=-ringT*14;ctx.beginPath();ctx.moveTo(gX,gY);ctx.lineTo(gX+Math.cos(ang)*ll,gY+Math.sin(ang)*ll);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
+    // Expanding elliptic rings
+    for(let i=0;i<6;i++){const ph=(ringT*(isOn?2.2:1.4)+i/6)%1,rr=ph*maxR,al=(1-ph)*.52*magnetStr;ctx.save();ctx.globalAlpha=al;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=1.8;ctx.shadowColor=`rgb(${rgb})`;ctx.shadowBlur=9;ctx.beginPath();ctx.ellipse(gX,gY,rr,rr*.38,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    // Core glow
+    const pulse=1+.18*Math.sin(pulseT*7);const glowR=maxR*.5*pulse;const gg=ctx.createRadialGradient(gX,gY,0,gX,gY,glowR);gg.addColorStop(0,`rgba(${rgb},${.2*magnetStr})`);gg.addColorStop(.5,`rgba(${rgb},${.06*magnetStr})`);gg.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=gg;ctx.beginPath();ctx.ellipse(gX,gY,glowR,glowR*.52,0,0,Math.PI*2);ctx.fill();
+    // Arcs
+    if(magnetStr>.55){const nA=isOn?3:2;for(let a=0;a<nA;a++){const aAng=arcT*4+(a/nA)*Math.PI*2,aR=26+11*Math.sin(arcT*9+a*2.2),vis=Math.max(0,Math.sin(arcT*6+a));ctx.save();ctx.globalAlpha=.45*magnetStr*vis;ctx.strokeStyle=`rgba(${rgb},.85)`;ctx.lineWidth=1.2;ctx.shadowColor=`rgb(${rgb})`;ctx.shadowBlur=8;ctx.beginPath();const nP=9;for(let p=0;p<=nP;p++){const t2=p/nP,ang=aAng+t2*Math.PI*.7,j=(p>0&&p<nP)?(Math.random()-.5)*7:0,px=gX+Math.cos(ang)*(aR+j),py=gY+Math.sin(ang)*(aR*.38+j*.38);p===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.stroke();ctx.restore();}}
+  }
 
-  // ── Table ─────────────────────────────────────────────────
-  // Table surface
-  const tGrad = ctx.createLinearGradient(0, tableY, 0, tableY + 16);
-  tGrad.addColorStop(0, '#4a321a');
-  tGrad.addColorStop(1, '#2a1c0e');
-  ctx.fillStyle = tGrad;
-  ctx.fillRect(0, tableY, W, H - tableY);
+  // Trails
+  objects.forEach(o=>{if(o.trail.length<2)return;const rgb=magnetState==='ON'?'0,229,255':'255,171,0';for(let i=1;i<o.trail.length;i++){const t=i/o.trail.length;ctx.save();ctx.globalAlpha=t*.32*magnetStr;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=3*(1-i/o.trail.length);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(o.trail[i-1].x,o.trail[i-1].y);ctx.lineTo(o.trail[i].x,o.trail[i].y);ctx.stroke();ctx.restore();}});
 
-  // Table surface line (bright edge)
-  ctx.strokeStyle = '#6a4820';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, tableY);
-  ctx.lineTo(W, tableY);
-  ctx.stroke();
+  // Drop shadows
+  objects.forEach(o=>{const d=tY-o.y;if(d>2){const sz=Math.max(3,10*(1-d/270));ctx.save();ctx.globalAlpha=Math.max(0,.25*(1-d/270));ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(o.x,tY+2,sz,sz*.28,0,0,Math.PI*2);ctx.fill();ctx.restore();}});
 
-  // Grid on table
+  // Table
+  const tg=ctx.createLinearGradient(0,tY,0,H);tg.addColorStop(0,'#1a0f06');tg.addColorStop(.15,'#0e0804');tg.addColorStop(1,'#070503');ctx.fillStyle=tg;ctx.fillRect(0,tY,W,H-tY);
+  const eg=ctx.createLinearGradient(0,0,W,0);const eC=magnetState==='ON'?'0,229,255':magnetState==='PRECISION'?'255,171,0':'70,110,55';eg.addColorStop(0,'rgba(0,0,0,0)');eg.addColorStop(.2,`rgba(${eC},${.22*magnetStr+.07})`);eg.addColorStop(.8,`rgba(${eC},${.22*magnetStr+.07})`);eg.addColorStop(1,'rgba(0,0,0,0)');ctx.strokeStyle=eg;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,tY);ctx.lineTo(W,tY);ctx.stroke();
+  ctx.save();ctx.globalAlpha=.07;ctx.strokeStyle='#0040a0';ctx.lineWidth=.5;for(let xi=0;xi<W;xi+=38){ctx.beginPath();ctx.moveTo(xi,tY);ctx.lineTo(xi,H);ctx.stroke();}for(let yi=tY;yi<H;yi+=38){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(W,yi);ctx.stroke();}ctx.restore();
+
+  // Objects
+  objects.forEach(o=>{const dist=Math.hypot(o.x-gX,o.y-gY),t=o.attached?1:Math.max(0,(1-dist/215))*magnetStr;drawObject(o,t);});
+
+  // Particles
+  particles.forEach(p=>{const lf=p.life/p.ml;ctx.save();ctx.globalAlpha=lf*.8;ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(p.x,p.y,p.r*lf,0,Math.PI*2);ctx.fill();ctx.restore();});
+
+  // Glove
+  drawGlove(gX,gY);
+
+  // Corner HUD
+  ctx.strokeStyle='rgba(0,180,255,0.22)';ctx.lineWidth=1.5;
+  [[0,20,0,0,20,0],[W-20,0,W,0,W,20],[0,H-20,0,H,20,H],[W-20,H,W,H,W,H-20]].forEach(([ax,ay,bx,by,cx2,cy2])=>{ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.lineTo(cx2,cy2);ctx.stroke();});
+  ctx.font="400 9px 'Share Tech Mono'";ctx.textAlign='center';ctx.fillStyle='rgba(0,130,180,0.35)';ctx.fillText('▲  ELECTROMAGNETIC INTERACTION ZONE  ▲',W/2,H-7);
+}
+
+function drawGlove(cx,cy){
+  const isOn=magnetState==='ON',isPr=magnetState==='PRECISION';
+  let base,hi,coil;
+  if(magnetStr>.4&&isOn){base='#003570';hi='#0088d4';coil='#00ccff';}
+  else if(magnetStr>.1&&isPr){base='#5c2e00';hi='#c07800';coil='#ffc000';}
+  else{base='#101c3c';hi='#223060';coil='#9a7415';}
   ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.strokeStyle = '#00aaff';
-  ctx.lineWidth = 0.5;
-  for (let xi = 0; xi < W; xi += 36) {
-    ctx.beginPath(); ctx.moveTo(xi, tableY); ctx.lineTo(xi, H); ctx.stroke();
-  }
-  ctx.restore();
-
-  // ── Magnetic field rings ─────────────────────────────────
-  if (magnetStr > 0.01) {
-    const RINGS = 5;
-    const ringSpeed = magnetState === 'ON' ? 2.1 : 1.3;
-    const maxR = magnetState === 'ON' ? 140 * magnetStr : 75 * magnetStr;
-    const ringR = magnetState === 'ON' ? [0,200,255] : [255,200,0];
-
-    for (let i = 0; i < RINGS; i++) {
-      const phase = (ringTimer * ringSpeed + i / RINGS) % 1.0;
-      const r     = phase * maxR;
-      const alpha = (1 - phase) * 0.6 * magnetStr;
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.strokeStyle = `rgb(${ringR[0]},${ringR[1]},${ringR[2]})`;
-      ctx.lineWidth = 2;
-      ctx.shadowColor = `rgb(${ringR[0]},${ringR[1]},${ringR[2]})`;
-      ctx.shadowBlur  = 8;
-      ctx.beginPath();
-      ctx.ellipse(gloveX, gloveY, r, r * 0.35, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Glow on glove
-    const pulse = 1 + 0.22 * Math.sin(pulseTimer * 6.5);
-    const glowR = maxR * 0.55 * pulse;
-    const glowGrad = ctx.createRadialGradient(gloveX, gloveY, 0, gloveX, gloveY, glowR);
-    const gc = magnetState === 'ON' ? '0,145,255' : '220,170,0';
-    glowGrad.addColorStop(0, `rgba(${gc},${0.18 * magnetStr})`);
-    glowGrad.addColorStop(1, `rgba(${gc},0)`);
-    ctx.save();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = glowGrad;
-    ctx.beginPath();
-    ctx.ellipse(gloveX, gloveY, glowR, glowR * 0.6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // ── Metal objects ─────────────────────────────────────────
-  objects.forEach(o => {
-    ctx.save();
-    ctx.translate(o.x, o.y);
-
-    const t = o.attached ? 1 : Math.max(0, 1 - Math.hypot(o.x - gloveX, o.y - gloveY) / 200) * magnetStr;
-    const r = o.r * o.z;
-
-    // Shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur  = 6;
-    ctx.shadowOffsetY = 4;
-
-    // Sphere gradient
-    const sg = ctx.createRadialGradient(-r*0.3, -r*0.35, r*0.05, 0, 0, r);
-    if (o.attached || t > 0.7) {
-      sg.addColorStop(0, '#d8f0ff');
-      sg.addColorStop(0.5, '#88c8ff');
-      sg.addColorStop(1, '#2060a0');
-    } else if (t > 0.1) {
-      sg.addColorStop(0, '#d0d8e8');
-      sg.addColorStop(0.5, '#9090b0');
-      sg.addColorStop(1, '#303050');
-    } else {
-      sg.addColorStop(0, '#c8cce0');
-      sg.addColorStop(0.5, '#8890a8');
-      sg.addColorStop(1, '#282838');
-    }
-
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Glow outline when attracted
-    if (t > 0.2) {
-      ctx.shadowColor = magnetState === 'ON' ? 'rgba(0,180,255,0.8)' : 'rgba(255,200,0,0.8)';
-      ctx.shadowBlur  = 12 * t;
-      ctx.strokeStyle = magnetState === 'ON' ? `rgba(0,200,255,${t*0.7})` : `rgba(255,220,0,${t*0.7})`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-
-    // Spinning highlight line when attached
-    if (o.attached) {
-      ctx.save();
-      ctx.rotate(o.spin);
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.4, 0); ctx.lineTo(r*0.4, 0);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.restore();
-  });
-
-  // ── Glove / Electromagnet ──────────────────────────────────
-  const gW = 90, gH = 26, gR = 6;
-
-  // Choose color based on state
-  let gloveCol, gloveHi, coilCol;
-  if (magnetStr > 0.5 && magnetState === 'ON') {
-    gloveCol = '#004a8a'; gloveHi = '#00aaff'; coilCol = '#00ccff';
-  } else if (magnetStr > 0.1 && magnetState === 'PRECISION') {
-    gloveCol = '#6a4400'; gloveHi = '#ffcc00'; coilCol = '#ffee44';
-  } else {
-    gloveCol = '#1a2a5a'; gloveHi = '#3050b0'; coilCol = '#c8a020';
-  }
-
-  // Shadow
-  ctx.save();
-  ctx.shadowColor = magnetStr > 0.5 ? (magnetState === 'ON' ? 'rgba(0,150,255,0.5)' : 'rgba(255,200,0,0.5)') : 'rgba(0,0,0,0.3)';
-  ctx.shadowBlur  = magnetStr > 0.1 ? 20 : 6;
-
-  // Glove body
-  const gGrad = ctx.createLinearGradient(gloveX - gW/2, gloveY - gH/2, gloveX - gW/2, gloveY + gH/2);
-  gGrad.addColorStop(0, gloveHi);
-  gGrad.addColorStop(1, gloveCol);
-  ctx.fillStyle = gGrad;
-  roundRect(ctx, gloveX - gW/2, gloveY - gH/2, gW, gH, gR);
-
-  // Coil strip
-  ctx.fillStyle = coilCol;
-  ctx.fillRect(gloveX - gW/2 + 6, gloveY - 3, gW - 12, 6);
-
-  // Finger segments
-  for (let i = 0; i < 4; i++) {
-    const fx = gloveX - 30 + i * 21;
-    const fGrad = ctx.createLinearGradient(fx, gloveY - gH/2 - 22, fx, gloveY - gH/2);
-    fGrad.addColorStop(0, gloveCol);
-    fGrad.addColorStop(1, gloveHi);
-    ctx.fillStyle = fGrad;
-    roundRect(ctx, fx - 7, gloveY - gH/2 - 20, 13, 20, 3);
-  }
-
-  // Thumb
-  const tGrad2 = ctx.createLinearGradient(0, 0, 1, 0);
-  ctx.fillStyle = gloveCol;
-  roundRect(ctx, gloveX - gW/2 - 14, gloveY - 8, 12, 16, 3);
-
-  // Suspension cable
-  ctx.strokeStyle = '#303548';
-  ctx.lineWidth = 3;
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.moveTo(gloveX, gloveY - gH/2);
-  ctx.lineTo(gloveX, 0);
-  ctx.stroke();
-
-  ctx.restore();
-
-  // Glove label
-  ctx.font = '700 9px Orbitron, monospace';
-  ctx.fillStyle = magnetStr > 0.1 ? coilCol : 'rgba(150,160,200,0.5)';
-  ctx.textAlign = 'center';
-  ctx.fillText('ELECTROMAGNET', gloveX, gloveY + gH/2 + 14);
-
-  // ── State label ────────────────────────────────────────────
-  ctx.font = '700 12px Orbitron, monospace';
-  ctx.textAlign = 'center';
-  if (magnetState === 'ON') {
-    ctx.fillStyle = `rgba(0,200,255,${0.6 + 0.4*Math.sin(pulseTimer*4)})`;
-    ctx.fillText('● MAGNET ON', gloveX, gloveY - gH/2 - 32);
-  } else if (magnetState === 'PRECISION') {
-    ctx.fillStyle = `rgba(255,210,0,${0.6 + 0.3*Math.sin(pulseTimer*3)})`;
-    ctx.fillText('◉ PRECISION MODE', gloveX, gloveY - gH/2 - 32);
-  } else {
-    ctx.fillStyle = 'rgba(100,120,160,0.5)';
-    ctx.fillText('○ MAGNET OFF', gloveX, gloveY - gH/2 - 32);
-  }
-
-  // ── Object drop shadows on table ──────────────────────────
-  objects.forEach(o => {
-    if (o.y < tableY - 15) {
-      const shadowX = o.x;
-      const sSize   = Math.max(4, 12 * (1 - (tableY - o.y) / 300));
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, 0.3 * (1 - (tableY - o.y) / 300));
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.ellipse(shadowX, tableY + 2, sSize, sSize * 0.3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-  });
-
-  updateDots();
+  if(magnetStr>.1){ctx.shadowColor=isOn?'#00e5ff':isPr?'#ffab00':'transparent';ctx.shadowBlur=magnetStr*26;}
+  const cg=ctx.createLinearGradient(cx-2,0,cx+2,0);cg.addColorStop(0,'#060f20');cg.addColorStop(.5,'#192840');cg.addColorStop(1,'#060f20');ctx.fillStyle=cg;ctx.fillRect(cx-2,0,4,cy-13);
+  const gW=82,gH=24;const pg=ctx.createLinearGradient(cx-gW/2,cy-gH/2,cx+gW/2,cy+gH/2);pg.addColorStop(0,hi);pg.addColorStop(.5,base);pg.addColorStop(1,'#060e1c');ctx.fillStyle=pg;ctx.beginPath();ctx.roundRect(cx-gW/2,cy-gH/2,gW,gH,5);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.09)';ctx.lineWidth=0.8;ctx.beginPath();ctx.roundRect(cx-gW/2,cy-gH/2,gW,gH,5);ctx.stroke();
+  const cb=ctx.createLinearGradient(cx,cy-3,cx,cy+3);cb.addColorStop(0,coil+'77');cb.addColorStop(.5,coil);cb.addColorStop(1,coil+'33');ctx.fillStyle=cb;ctx.fillRect(cx-gW/2+7,cy-3,gW-14,6);
+  ctx.strokeStyle=coil+'44';ctx.lineWidth=.6;for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(cx-gW/2+7+i*((gW-14)/7),cy-3);ctx.lineTo(cx-gW/2+7+(i+.5)*((gW-14)/7),cy+3);ctx.stroke();}
+  [-29,-9,10,29].forEach(fx=>{const fg=ctx.createLinearGradient(cx+fx-6,cy-gH/2-18,cx+fx+6,cy-gH/2);fg.addColorStop(0,base);fg.addColorStop(1,hi);ctx.fillStyle=fg;ctx.beginPath();ctx.roundRect(cx+fx-6,cy-gH/2-17,13,17,3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=.5;ctx.beginPath();ctx.roundRect(cx+fx-6,cy-gH/2-17,13,17,3);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,0.28)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx+fx-6,cy-gH/2-7);ctx.lineTo(cx+fx+7,cy-gH/2-7);ctx.stroke();});
+  ctx.fillStyle=hi;ctx.beginPath();ctx.roundRect(cx-gW/2-12,cy-8,11,15,3);ctx.fill();
+  ctx.restore();ctx.save();ctx.shadowBlur=0;
+  ctx.font="700 10px 'Share Tech Mono'";ctx.textAlign='center';
+  const V=magnetStr*(isOn?24:8.4),lbl=magnetState==='ON'?`● MAGNET ON  [${V.toFixed(0)}V]`:magnetState==='PRECISION'?`◉ PRECISION  [${V.toFixed(1)}V]`:'○ MAGNET OFF';
+  const plse=magnetStr>.05?.6+.4*Math.sin(pulseT*5):.38;
+  ctx.fillStyle=magnetState==='ON'?`rgba(0,229,255,${plse})`:magnetState==='PRECISION'?`rgba(255,171,0,${plse})`:'rgba(50,80,120,0.45)';
+  ctx.fillText(lbl,cx,cy-gH/2-27);ctx.restore();
 }
 
-// ── Helper: rounded rect ──────────────────────────────────────────
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.fill();
+function init(){
+  const w=document.getElementById('scene-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;
+  osc.width=osc.parentElement.clientWidth-32;osc.height=52;
+  initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);setGesture('open');requestAnimationFrame(render);
 }
-
-// ── Init ──────────────────────────────────────────────────────────
-function init() {
-  const wrap = document.getElementById('scene-wrap');
-  canvas.width  = wrap.clientWidth;
-  canvas.height = wrap.clientHeight;
-  initObjects(canvas.width / 2, canvas.height * 0.72);
-  buildDots();
-  setGesture('open');
-  requestAnimationFrame(render);
-}
-
-window.addEventListener('resize', () => {
-  const wrap = document.getElementById('scene-wrap');
-  initObjects(wrap.clientWidth / 2, wrap.clientHeight * 0.72);
-  buildDots();
-});
-
+window.addEventListener('resize',()=>{const w=document.getElementById('scene-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;osc.width=osc.parentElement.clientWidth-32;initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);});
 init();
 </script>
 </body>
