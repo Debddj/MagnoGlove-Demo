@@ -2,93 +2,162 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MagnoGlove Pro</title>
+<title>MagnoGlove Pro — Interactive Demo</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@200;400;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
-:root{--bg0:#03050f;--bg1:#060c1a;--cyan:#00e5ff;--amber:#ffab00;--red:#ff1744;--green:#00e676;--panel:rgba(6,14,30,0.94);--border:rgba(0,180,255,0.14);--text:#c8daf0;--dim:#3d5470;--dimx:#5a7090;}
-*{margin:0;padding:0;box-sizing:border-box;}html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);}
-body{font-family:'Exo 2',sans-serif;color:var(--text);display:grid;grid-template-columns:1fr 300px;grid-template-rows:52px 1fr 44px;}
-header{grid-column:1/-1;display:flex;align-items:center;background:rgba(3,8,20,0.98);border-bottom:1px solid var(--border);}
-.h-logo{padding:0 20px;display:flex;align-items:center;gap:12px;border-right:1px solid var(--border);height:100%;}
-.logo-text{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;letter-spacing:4px;}
+
+:root {
+  --bg0:#020408; --bg1:#060c18; --cyan:#00e5ff; --amber:#ffab00;
+  --red:#ff1744; --green:#00e676; --purple:#bf00ff;
+  --panel:rgba(4,10,24,0.96); --border:rgba(0,180,255,0.13);
+  --text:#c0d4ee; --dim:#3a5068; --dimx:#587090;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);}
+body{font-family:'Exo 2',sans-serif;color:var(--text);
+  display:grid;grid-template-columns:1fr 310px;grid-template-rows:54px 1fr 46px;}
+
+/* ── Header ── */
+header{grid-column:1/-1;display:flex;align-items:center;
+  background:rgba(2,5,14,0.98);border-bottom:1px solid var(--border);}
+.h-logo{padding:0 22px;display:flex;align-items:center;gap:13px;
+  border-right:1px solid var(--border);height:100%;}
+.logo-text{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;letter-spacing:4px;}
 .logo-text .m{color:var(--cyan)}.logo-text .g{color:var(--amber)}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.logo-dot{width:9px;height:9px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 8px var(--green);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.28}}
 .h-stats{display:flex;margin-left:auto;}
-.h-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 18px;border-left:1px solid var(--border);height:52px;min-width:90px;}
-.h-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);margin-bottom:3px;}
-.h-stat-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;}
-.vc{color:var(--cyan)}.va{color:var(--amber)}.vr{color:var(--red)}.vg{color:var(--green)}.vd{color:var(--dimx)}
+.h-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 18px;border-left:1px solid var(--border);height:54px;min-width:92px;}
+.h-stat-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
+  color:var(--dim);margin-bottom:3px;}
+.h-stat-val{font-family:'Orbitron',monospace;font-size:12px;font-weight:700;}
+.vc{color:var(--cyan)}.va{color:var(--amber)}.vr{color:var(--red)}
+.vg{color:var(--green)}.vd{color:var(--dimx)}.vp{color:var(--purple)}
+
+/* ── Canvas scene ── */
 #scene-wrap{position:relative;overflow:hidden;background:var(--bg0);}
 canvas#sim{display:block;width:100%;height:100%;}
-#scene-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);}
-#scene-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(0,3,12,0.65) 100%);}
-#grid-overlay{position:absolute;inset:0;pointer-events:none;z-index:1;background-image:linear-gradient(rgba(0,180,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,180,255,0.035) 1px,transparent 1px);background-size:60px 60px;}
-#panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
-.pb{padding:14px 16px;border-bottom:1px solid var(--border);position:relative;}
-.pb::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background 0.3s;}
+#scene-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.035) 3px,rgba(0,0,0,.035) 4px);}
+#scene-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(ellipse 82% 82% at 50% 50%,transparent 48%,rgba(0,2,10,.7) 100%);}
+#grid{position:absolute;inset:0;pointer-events:none;z-index:1;
+  background-image:linear-gradient(rgba(0,180,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,180,255,.028) 1px,transparent 1px);
+  background-size:55px 55px;}
+
+/* ── Right panel ── */
+#panel{background:var(--panel);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.pb{padding:13px 15px;border-bottom:1px solid var(--border);position:relative;}
+.pb::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:transparent;transition:background .25s;}
 .pb.son::before{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
 .pb.spr::before{background:var(--amber);box-shadow:0 0 8px var(--amber);}
-.pt{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.pt{font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:3px;
+  color:var(--dim);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
 .pt::after{content:'';flex:1;height:1px;background:var(--border);}
-.gb{width:100%;padding:10px 12px;background:rgba(0,180,255,0.04);border:1px solid rgba(0,180,255,0.12);color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.12s;display:flex;align-items:center;gap:10px;margin-bottom:6px;position:relative;overflow:hidden;}
-.gb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background 0.12s;}
-.gb:hover{background:rgba(0,180,255,0.09);}
-.gb.on{border-color:var(--cyan);background:rgba(0,229,255,0.08);color:var(--cyan);}
+
+/* gesture buttons */
+.gb{width:100%;padding:9px 11px;background:rgba(0,180,255,.04);
+  border:1px solid rgba(0,180,255,.11);color:var(--text);
+  font-family:'Exo 2',sans-serif;font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .12s;display:flex;align-items:center;
+  gap:10px;margin-bottom:5px;position:relative;overflow:hidden;}
+.gb::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:transparent;transition:background .12s;}
+.gb:hover{background:rgba(0,180,255,.08);}
+.gb.on{border-color:var(--cyan);background:rgba(0,229,255,.08);color:var(--cyan);}
 .gb.on::after{background:var(--cyan);box-shadow:0 0 6px var(--cyan);}
-.gb.off{border-color:var(--red);background:rgba(255,23,68,0.08);color:var(--red);}
+.gb.off{border-color:var(--red);background:rgba(255,23,68,.07);color:var(--red);}
 .gb.off::after{background:var(--red);}
-.gb.pr{border-color:var(--amber);background:rgba(255,171,0,0.08);color:var(--amber);}
-.gb.pr::after{background:var(--amber);box-shadow:0 0 6px var(--amber);}
-.gi{font-size:18px;width:24px;text-align:center;}.gl{flex:1;text-align:left;}
-.gt{font-family:'Share Tech Mono',monospace;font-size:8px;padding:2px 7px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);letter-spacing:1px;}
-.sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;}
-.sk{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);}
-.sv{font-family:'Share Tech Mono',monospace;font-size:11px;font-weight:600;}
-.son{color:var(--cyan)}.sof{color:var(--red)}.spr{color:var(--amber)}.sid{color:var(--dimx)}.sgn{color:var(--green)}
-.mtr{height:4px;background:rgba(255,255,255,0.05);margin-top:8px;overflow:hidden;}
-.mf{height:100%;width:0%;transition:width 0.25s ease,background 0.25s;}
-.ml{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:4px;}
-#osc-canvas{display:block;width:100%;height:52px;margin-top:8px;}
-.rg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px;}
-.rc{background:rgba(0,0,0,0.3);border:1px solid var(--border);padding:7px 8px;}
-.rl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1.5px;margin-bottom:3px;}
-.rv{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:600;color:var(--cyan);}
+.gb.pr{border-color:var(--amber);background:rgba(255,171,0,.07);color:var(--amber);}
+.gb.pr::after{background:var(--amber);box-shadow:0 0 5px var(--amber);}
+.gi{font-size:17px;width:22px;text-align:center;}.gl{flex:1;text-align:left;}
+.gt{font-family:'Share Tech Mono',monospace;font-size:7.5px;padding:2px 6px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);letter-spacing:1px;}
+
+/* status rows */
+.sr{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-size:11.5px;}
+.sk{font-family:'Share Tech Mono',monospace;font-size:9.5px;color:var(--dim);}
+.sv{font-family:'Share Tech Mono',monospace;font-size:10.5px;font-weight:600;}
+.son{color:var(--cyan)}.sof{color:var(--red)}.spr{color:var(--amber)}
+.sid{color:var(--dimx)}.sgn{color:var(--green)}
+
+/* meter */
+.ml{display:flex;justify-content:space-between;font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;color:var(--dim);margin-bottom:3px;}
+.mtr{height:4px;background:rgba(255,255,255,.05);overflow:hidden;}
+.mf{height:100%;width:0%;transition:width .2s ease,background .2s;}
+
+/* telemetry grid */
+#osc-canvas{display:block;width:100%;height:50px;margin-top:8px;}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:2px;}
+.rc{background:rgba(0,0,0,.3);border:1px solid var(--border);padding:6px 8px;}
+.rl{font-family:'Share Tech Mono',monospace;font-size:7.5px;color:var(--dim);
+  letter-spacing:1.5px;margin-bottom:3px;}
+.rv{font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:600;color:var(--cyan);}
 .rv.a{color:var(--amber)}.rv.g{color:var(--green)}.rv.d{color:var(--dimx)}
-.og{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
-.oc{display:flex;align-items:center;gap:5px;padding:3px 7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dimx);transition:all 0.2s;letter-spacing:0.5px;}
-.od{width:6px;height:6px;border-radius:50%;background:var(--dimx);transition:all 0.2s;}
-.oc.lv{color:var(--cyan);border-color:rgba(0,229,255,0.3);background:rgba(0,229,255,0.06);}
+
+/* object inventory chips */
+.og{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.oc{display:flex;align-items:center;gap:5px;padding:3px 7px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--dimx);
+  transition:all .18s;letter-spacing:.4px;}
+.od{width:7px;height:7px;border-radius:50%;background:var(--dimx);transition:all .18s;}
+.oc.lv{color:var(--cyan);border-color:rgba(0,229,255,.28);background:rgba(0,229,255,.06);}
 .oc.lv .od{background:var(--cyan);box-shadow:0 0 5px var(--cyan);}
-.oc.lp{color:var(--amber);border-color:rgba(255,171,0,0.3);background:rgba(255,171,0,0.06);}
+.oc.lp{color:var(--amber);border-color:rgba(255,171,0,.28);background:rgba(255,171,0,.06);}
 .oc.lp .od{background:var(--amber);box-shadow:0 0 5px var(--amber);}
-footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:16px;background:rgba(3,8,20,0.98);border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);letter-spacing:2px;}
-.flv{color:var(--green);animation:blink 1.4s infinite;}.ffps{margin-left:auto;color:var(--cyan);}
-#panel::-webkit-scrollbar{width:3px;}#panel::-webkit-scrollbar-thumb{background:var(--dim);}
+
+/* footer */
+footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:14px;
+  background:rgba(2,5,14,0.98);border-top:1px solid var(--border);
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;color:var(--dim);letter-spacing:1.8px;}
+.flv{color:var(--green);animation:blink 1.4s infinite;}
+.ffps{margin-left:auto;color:var(--cyan);}
+#panel::-webkit-scrollbar{width:3px;}
+#panel::-webkit-scrollbar-thumb{background:var(--dim);}
 </style>
 </head>
 <body>
+
 <header>
   <div class="h-logo">
     <div class="logo-text"><span class="m">MAGNO</span><span class="g">GLOVE</span></div>
     <div class="logo-dot"></div>
   </div>
   <div class="h-stats">
-    <div class="h-stat"><div class="h-stat-label">GESTURE</div><div class="h-stat-val vd" id="hg">NONE</div></div>
-    <div class="h-stat"><div class="h-stat-label">MAGNET</div><div class="h-stat-val vr" id="hm">OFF</div></div>
-    <div class="h-stat"><div class="h-stat-label">FLUX</div><div class="h-stat-val vc" id="hs">0.00 T</div></div>
-    <div class="h-stat"><div class="h-stat-label">OBJECTS</div><div class="h-stat-val vg" id="ho">10 idle</div></div>
-    <div class="h-stat"><div class="h-stat-label">POWER</div><div class="h-stat-val vd" id="hw">0 W</div></div>
+    <div class="h-stat"><div class="h-stat-label">GESTURE</div>
+      <div class="h-stat-val vd" id="hg">NONE</div></div>
+    <div class="h-stat"><div class="h-stat-label">MAGNET</div>
+      <div class="h-stat-val vr" id="hm">OFF</div></div>
+    <div class="h-stat"><div class="h-stat-label">FLUX</div>
+      <div class="h-stat-val vc" id="hs">0.00 T</div></div>
+    <div class="h-stat"><div class="h-stat-label">ATTRACTED</div>
+      <div class="h-stat-val vg" id="ho">10 idle</div></div>
+    <div class="h-stat"><div class="h-stat-label">POWER</div>
+      <div class="h-stat-val vd" id="hw">0 W</div></div>
   </div>
 </header>
-<div id="scene-wrap"><div id="grid-overlay"></div><canvas id="sim"></canvas></div>
+
+<div id="scene-wrap"><div id="grid"></div><canvas id="sim"></canvas></div>
+
 <div id="panel">
+  <!-- Gesture Control -->
   <div class="pb" id="pb-g">
     <div class="pt">GESTURE CONTROL</div>
-    <button class="gb off" id="gb-o" onclick="setGesture('open')"><span class="gi">✋</span><span class="gl">OPEN HAND</span><span class="gt">RELEASE</span></button>
-    <button class="gb" id="gb-f" onclick="setGesture('fist')"><span class="gi">✊</span><span class="gl">CLOSED FIST</span><span class="gt">FULL POWER</span></button>
-    <button class="gb" id="gb-p" onclick="setGesture('pinch')"><span class="gi">👌</span><span class="gl">PINCH GESTURE</span><span class="gt">PRECISION</span></button>
+    <button class="gb off" id="gb-o" onclick="setGesture('open')">
+      <span class="gi">✋</span><span class="gl">OPEN HAND</span><span class="gt">RELEASE</span></button>
+    <button class="gb" id="gb-f" onclick="setGesture('fist')">
+      <span class="gi">✊</span><span class="gl">CLOSED FIST</span><span class="gt">FULL POWER</span></button>
+    <button class="gb" id="gb-p" onclick="setGesture('pinch')">
+      <span class="gi">👌</span><span class="gl">PINCH</span><span class="gt">PRECISION</span></button>
   </div>
+  <!-- System Status -->
   <div class="pb" id="pb-s">
     <div class="pt">SYSTEM STATUS</div>
     <div class="sr"><span class="sk">GESTURE STATE</span><span class="sv sid" id="st-g">OPEN_HAND</span></div>
@@ -98,6 +167,7 @@ footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:16px;
     <div class="ml"><span>FIELD STRENGTH</span><span id="mt-p">0%</span></div>
     <div class="mtr"><div class="mf" id="mf"></div></div>
   </div>
+  <!-- Telemetry -->
   <div class="pb">
     <div class="pt">TELEMETRY</div>
     <div class="rg">
@@ -108,10 +178,12 @@ footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:16px;
     </div>
     <canvas id="osc-canvas"></canvas>
   </div>
+  <!-- Object Inventory -->
   <div class="pb">
     <div class="pt">OBJECT INVENTORY</div>
     <div class="og" id="obj-grid"></div>
   </div>
+  <!-- Module Info -->
   <div class="pb">
     <div class="pt">MODULE INFO</div>
     <div class="sr"><span class="sk">CV ENGINE</span><span class="sv sgn">MediaPipe v0.10</span></div>
@@ -121,256 +193,918 @@ footer{grid-column:1/-1;display:flex;align-items:center;padding:0 20px;gap:16px;
     <div class="sr"><span class="sk">FPS TARGET</span><span class="sv son" id="st-fps">--</span></div>
   </div>
 </div>
+
 <footer>
   <span class="flv">● LIVE</span><span>|</span>
   <span>ELECTROMAGNETIC SIMULATION ENGINE</span><span>|</span>
-  <span>MagnoGlove MVP v2.0</span><span>|</span>
+  <span>MagnoGlove Pro v2.1</span><span>|</span>
   <span>AI / ML ENGINEERING DEPT</span>
   <span class="ffps" id="f-fps">60 FPS</span>
 </footer>
-<script>
-const canvas=document.getElementById('sim'),ctx=canvas.getContext('2d');
-const osc=document.getElementById('osc-canvas'),octx=osc.getContext('2d');
-let gesture='open',magnetState='OFF',magnetStr=0,targetStr=0;
-let ringT=0,pulseT=0,arcT=0,starT=0,frameCount=0,lastFPS=performance.now(),fps=60,lastTime=0;
-let oscHist=new Array(120).fill(0),tempVal=24,particles=[],stars=[];
 
-const OBJ_TYPES=[
-  {id:'SPHERE',   label:'Fe Sphere', c:['#d0d8f0','#8890b8','#1c1c30']},
-  {id:'HEX_BOLT', label:'Hex Bolt',  c:['#e0e8f8','#9098c0','#202038']},
-  {id:'SCREW',    label:'M6 Screw',  c:['#c8d4e8','#787898','#181830']},
-  {id:'PLATE',    label:'Fe Plate',  c:['#d8dce8','#888a98','#202028']},
-  {id:'COIN',     label:'Cu Disk',   c:['#f0d890','#c09840','#504020']},
-  {id:'ROD',      label:'Steel Rod', c:['#dce0f0','#9094b0','#282840']},
-  {id:'WASHER',   label:'Washer',    c:['#d4d8ec','#8488a8','#242440']},
-  {id:'SHARD',    label:'Fe Shard',  c:['#e8dce0','#a09098','#302028']},
-  {id:'NUT',      label:'Hex Nut',   c:['#dce8e0','#8aa898','#202830']},
-  {id:'CAP',      label:'Cap Screw', c:['#e4dce8','#a090a8','#302030']},
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('sim'), ctx = canvas.getContext('2d');
+const osc    = document.getElementById('osc-canvas'), octx = osc.getContext('2d');
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+let gesture = 'open', magnetState = 'OFF', magnetStr = 0, targetStr = 0;
+let ringT = 0, pulseT = 0, starT = 0, arcT = 0;
+let frameCount = 0, lastFPS = performance.now(), fps = 60, lastTime = 0;
+let oscHist = new Array(120).fill(0), tempVal = 24;
+let particles = [], stars = [], objects = [];
+let prevGesture = null;
+
+// ══════════════════════════════════════════════════════════════
+//  GEM / METAL OBJECT DEFINITIONS
+//  Each has: shape, label, 3 idle gradient stops, pulled color, glow color
+// ══════════════════════════════════════════════════════════════
+const OBJ_DEFS = [
+  { id:'RUBY',     label:'Ruby',      shape:'sphere',
+    c:['#660010','#cc0022','#ff4466'], pull:'#ff6688', glow:'#ff0033' },
+  { id:'GOLD',     label:'Gold',      shape:'coin',
+    c:['#7a5a00','#c89a18','#ffe566'], pull:'#ffe580', glow:'#ffd700' },
+  { id:'EMERALD',  label:'Emerald',   shape:'plate',
+    c:['#003520','#007840','#30e890'], pull:'#60ffa0', glow:'#00ff70' },
+  { id:'SAPPHIRE', label:'Sapphire',  shape:'rod',
+    c:['#001068','#1050cc','#60a8ff'], pull:'#90c8ff', glow:'#2288ff' },
+  { id:'AMETHYST', label:'Amethyst',  shape:'shard',
+    c:['#2a0052','#6010a0','#c040ff'], pull:'#d870ff', glow:'#aa00ff' },
+  { id:'COPPER',   label:'Copper',    shape:'washer',
+    c:['#5a2000','#b06820','#e0a860'], pull:'#ffcc88', glow:'#e07030' },
+  { id:'CHROME',   label:'Chrome',    shape:'bolt',
+    c:['#404050','#9098b0','#dce8ff'], pull:'#ffffff', glow:'#c0d4ff' },
+  { id:'BRONZE',   label:'Bronze',    shape:'nut',
+    c:['#5c2800','#b06020','#e0a050'], pull:'#ffcc80', glow:'#d08030' },
+  { id:'TITANIUM', label:'Titanium',  shape:'screw',
+    c:['#303238','#70727a','#c0c2ca'], pull:'#e8eaf0', glow:'#9090c0' },
+  { id:'OBSIDIAN', label:'Obsidian',  shape:'cap',
+    c:['#080610','#181024','#483860'], pull:'#9060c0', glow:'#6030a0' },
 ];
 
-let objects=[];
-function initObjects(cx,tY){
-  const pos=[[-3.8,0.5],[-2.4,-0.9],[-1.0,1.3],[0.2,-1.5],[1.5,0.9],[2.8,-0.6],[-2.2,1.9],[1.0,2.1],[3.6,1.6],[-0.4,-2.3]];
-  objects=OBJ_TYPES.map((t,i)=>{
-    const[dx,dz]=pos[i];
-    return{type:t.id,label:t.label,color:t.c,x:cx+dx*28,y:tY-8,rx:cx+dx*28,ry:tY-8,vx:0,vy:0,attached:false,spin:Math.random()*Math.PI*2,spinV:(Math.random()-0.5)*0.8,z:1+Math.abs(dz)*0.07,trail:[],idx:i};
+// ══════════════════════════════════════════════════════════════
+//  INIT OBJECTS
+// ══════════════════════════════════════════════════════════════
+const SPREAD = [
+  [-3.8,0.4],[-2.4,-1.0],[-1.0,1.4],[0.2,-1.6],[1.5,1.0],
+  [2.8,-0.7],[-2.2,2.0],[1.0,2.2],[3.6,1.7],[-0.4,-2.4]
+];
+
+function initObjects(cx, tY) {
+  objects = OBJ_DEFS.map((def, i) => {
+    const [dx, dz] = SPREAD[i];
+    return {
+      ...def,
+      x: cx + dx * 28, y: tY - 9,
+      rx: cx + dx * 28, ry: tY - 9,
+      vx: 0, vy: 0,
+      attached: false, wasAttached: false,
+      spin: Math.random() * Math.PI * 2,
+      spinV: (Math.random() - 0.5) * 0.6,
+      z: 1 + Math.abs(dz) * 0.07,
+      trail: [], idx: i,
+      // Current draw colour (lerps between idle and pull)
+      cr: 0, cg: 0, cb: 0,   // will be set below
+    };
+  });
+  objects.forEach(o => { const rgb = hexToRgb(o.c[1]); o.cr=rgb.r;o.cg=rgb.g;o.cb=rgb.b; });
+}
+
+function initStars(W, H) {
+  stars = Array.from({length:60}, () => ({
+    x: Math.random()*W, y: Math.random()*H*0.70,
+    r: Math.random()*1.2+0.18,
+    a: Math.random()*0.32+0.07,
+    fl: Math.random()*Math.PI*2,
+  }));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════════════════
+function hexToRgb(h) {
+  const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+  return {r,g,b};
+}
+function lerpNum(a,b,t){ return a+(b-a)*Math.max(0,Math.min(1,t)); }
+function lerpRgb(ar,ag,ab, br,bg,bb, t) {
+  return [lerpNum(ar,br,t)|0, lerpNum(ag,bg,t)|0, lerpNum(ab,bb,t)|0];
+}
+function easeOut(t){ return 1-(1-t)**3; }
+
+// ══════════════════════════════════════════════════════════════
+//  GESTURE CONTROL
+// ══════════════════════════════════════════════════════════════
+function setGesture(g) {
+  prevGesture = gesture; gesture = g;
+  document.querySelectorAll('.gb').forEach(b => b.className='gb');
+  ['pb-g','pb-s'].forEach(id => { const e=document.getElementById(id);e.classList.remove('son','spr'); });
+
+  if (g === 'fist') {
+    targetStr = 1.0; magnetState = 'ON';
+    document.getElementById('gb-f').classList.add('on');
+    ['pb-g','pb-s'].forEach(id => document.getElementById(id).classList.add('son'));
+    setHdr('hm','ON','vc'); setHdr('hg','FIST','vc');
+    if(prevGesture !== 'fist') spawnBurst();
+  } else if (g === 'pinch') {
+    targetStr = 0.35; magnetState = 'PRECISION';
+    document.getElementById('gb-p').classList.add('pr');
+    ['pb-g','pb-s'].forEach(id => document.getElementById(id).classList.add('spr'));
+    setHdr('hm','PREC','va'); setHdr('hg','PINCH','va');
+    if(prevGesture !== 'pinch') spawnBurst();
+  } else {
+    targetStr = 0.0; magnetState = 'OFF';
+    document.getElementById('gb-o').classList.add('off');
+    setHdr('hm','OFF','vr'); setHdr('hg','OPEN','vd');
+  }
+}
+
+function setHdr(id, txt, cls) {
+  const e = document.getElementById(id);
+  e.textContent = txt; e.className = 'h-stat-val ' + cls;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PARTICLE BURST
+// ══════════════════════════════════════════════════════════════
+function spawnBurst() {
+  const gX = canvas.width/2, gY = canvas.height * 0.20;
+  const isOn = magnetState === 'ON';
+  const r = isOn ? 0 : 255, gC = isOn ? 229 : 171, b = isOn ? 255 : 0;
+  for (let i = 0; i < 36; i++) {
+    const a = (i/36)*Math.PI*2 + Math.random()*0.3;
+    const s = 60 + Math.random()*160;
+    particles.push({
+      x:gX, y:gY, vx:Math.cos(a)*s, vy:Math.sin(a)*s,
+      r, g:gC, b, life:0.55+Math.random()*0.45, ml:1.0,
+      sz: 1.8+Math.random()*3.0
+    });
+  }
+}
+
+function updateParticles(dt) {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.vy += 200*dt;
+    p.vx *= 0.92; p.vy *= 0.92;
+    p.life -= dt;
   });
 }
-function initStars(W,H){stars=Array.from({length:55},()=>({x:Math.random()*W,y:Math.random()*H*0.68,r:Math.random()*1.1+0.2,a:Math.random()*0.35+0.08,fl:Math.random()*Math.PI*2}));}
 
-let prevG=null;
-function setGesture(g){
-  prevG=gesture; gesture=g;
-  document.querySelectorAll('.gb').forEach(b=>b.className='gb');
-  const W=canvas.width,H=canvas.height,gX=W/2,gY=H*0.2;
-  ['pb-g','pb-s'].forEach(id=>{const e=document.getElementById(id);e.classList.remove('son','spr');});
-  if(g==='fist'){
-    targetStr=1.0;magnetState='ON';
-    document.getElementById('gb-f').classList.add('on');
-    ['pb-g','pb-s'].forEach(id=>document.getElementById(id).classList.add('son'));
-    setHdr('hm','ON','vc');setHdr('hg','FIST','vc');
-    if(prevG!=='fist')spawnParticles(gX,gY);
-  }else if(g==='pinch'){
-    targetStr=0.35;magnetState='PRECISION';
-    document.getElementById('gb-p').classList.add('pr');
-    ['pb-g','pb-s'].forEach(id=>document.getElementById(id).classList.add('spr'));
-    setHdr('hm','PREC','va');setHdr('hg','PINCH','va');
-    if(prevG!=='pinch')spawnParticles(gX,gY);
-  }else{
-    targetStr=0.0;magnetState='OFF';
-    document.getElementById('gb-o').classList.add('off');
-    setHdr('hm','OFF','vr');setHdr('hg','OPEN','vd');
-  }
-}
-function setHdr(id,txt,cls){const e=document.getElementById(id);e.textContent=txt;e.className='h-stat-val '+cls;}
-function spawnParticles(gX,gY){
-  const col=magnetState==='ON'?[0,229,255]:[255,171,0];
-  for(let i=0;i<32;i++){const a=(i/32)*Math.PI*2+Math.random()*0.2,s=70+Math.random()*130;particles.push({x:gX,y:gY,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:0.5+Math.random()*0.4,ml:0.9,r:1.5+Math.random()*2.5,col});}
-}
+// ══════════════════════════════════════════════════════════════
+//  OBJECT PHYSICS
+// ══════════════════════════════════════════════════════════════
+function updatePhysics(W, H, dt) {
+  const gX = W/2, gY = H*0.20, tY = H*0.72;
+  const maxR = magnetState==='ON' ? 260 : 130;
 
-function buildInventory(){
-  const w=document.getElementById('obj-grid');w.innerHTML='';
-  objects.forEach((o,i)=>{const d=document.createElement('div');d.className='oc';d.id='chip-'+i;d.innerHTML=`<div class="od"></div>${o.label.split(' ')[0]}`;w.appendChild(d);});
-}
-function updateInventory(){
-  let att=0;
-  objects.forEach((o,i)=>{const c=document.getElementById('chip-'+i);if(!c)return;if(o.attached){c.className='oc '+(magnetState==='ON'?'lv':'lp');att++;}else c.className='oc';});
-  const n=objects.length;
-  document.getElementById('ho').textContent=att?`${att}/${n} held`:`${n} idle`;
-  document.getElementById('ho').className='h-stat-val '+(att?'vc':'vg');
-  const st=document.getElementById('st-o');
-  if(att){st.textContent=att+' ATTRACTED';st.className='sv son';}
-  else if(magnetStr>0.05){st.textContent='APPROACHING';st.className='sv spr';}
-  else{st.textContent='IDLE';st.className='sv sid';}
-}
-function updateTelemetry(dt){
-  const V=magnetStr*(magnetState==='ON'?24:8.4),A=magnetStr*(magnetState==='ON'?3.2:1.1),P=V*A,T=magnetStr*(magnetState==='ON'?0.85:0.30);
-  tempVal+=(24+P*0.6-tempVal)*dt*0.4;
-  const vc=magnetStr>0.05?(magnetState==='ON'?'':'a'):'d';
-  setText('rc-v',V.toFixed(1)+' V','rv '+vc);setText('rc-a',A.toFixed(2)+' A','rv '+vc);setText('rc-t',T.toFixed(2)+' T','rv '+vc);
-  setText('rc-tmp',tempVal.toFixed(0)+'°C','rv '+(tempVal>35?'a':'g'));
-  document.getElementById('hw').textContent=Math.round(P)+' W';
-  document.getElementById('hw').className='h-stat-val '+(P>5?(magnetState==='ON'?'vc':'va'):'vd');
-  document.getElementById('hs').textContent=T.toFixed(2)+' T';
-  document.getElementById('st-r').textContent=(magnetStr*(magnetState==='ON'?9.0:3.8)).toFixed(1)+' m';
-  const noise=magnetStr>0.05?(Math.sin(pulseT*12)*0.3+Math.sin(pulseT*7.3)*0.12+Math.random()*0.06):Math.random()*0.03-0.015;
-  oscHist.push(magnetStr*noise);oscHist.shift();drawOsc();
-}
-function setText(id,txt,cls){const e=document.getElementById(id);e.textContent=txt;if(cls)e.className=cls;}
-function drawOsc(){
-  const W=osc.width,H=osc.height;octx.clearRect(0,0,W,H);octx.fillStyle='rgba(0,0,0,0.55)';octx.fillRect(0,0,W,H);
-  octx.strokeStyle='rgba(0,100,150,0.25)';octx.lineWidth=0.5;
-  [0.25,0.5,0.75].forEach(f=>{octx.beginPath();octx.moveTo(0,H*f);octx.lineTo(W,H*f);octx.stroke();octx.beginPath();octx.moveTo(W*f,0);octx.lineTo(W*f,H);octx.stroke();});
-  const col=magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1e3050';
-  octx.strokeStyle=col;octx.lineWidth=1.5;octx.shadowColor=col;octx.shadowBlur=magnetStr>0.05?5:0;
-  octx.beginPath();oscHist.forEach((v,i)=>{const x=(i/oscHist.length)*W,y=H/2-v*H*1.9;i===0?octx.moveTo(x,y):octx.lineTo(x,y);});octx.stroke();octx.shadowBlur=0;
-}
+  objects.forEach((o, idx) => {
+    const pr = hexToRgb(o.pull);
+    const ir = hexToRgb(o.c[1]);
 
-function metalGrad(ctx,r,c1,c2,c3){const g=ctx.createRadialGradient(-r*.3,-r*.35,r*.04,0,0,r);g.addColorStop(0,c1);g.addColorStop(0.55,c2);g.addColorStop(1,c3);return g;}
-
-function drawObject(o,t){
-  const r=11*o.z;const[c1,c2,c3]=o.color;const gc=magnetState==='ON'?'#00e5ff':'#ffab00';
-  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.spin);
-  if(t>0.15){ctx.shadowColor=gc;ctx.shadowBlur=14*t;}
-  switch(o.type){
-    case'SPHERE':drawSphere(r,c1,c2,c3);break;case'HEX_BOLT':drawHexBolt(r,c1,c2,c3);break;
-    case'SCREW':drawScrew(r,c1,c2,c3);break;case'PLATE':drawPlate(r,c1,c2,c3);break;
-    case'COIN':drawCoin(r,c1,c2,c3);break;case'ROD':drawRod(r,c1,c2,c3);break;
-    case'WASHER':drawWasher(r,c1,c2,c3);break;case'SHARD':drawShard(r,c1,c2,c3);break;
-    case'NUT':drawNut(r,c1,c2,c3);break;case'CAP':drawCap(r,c1,c2,c3);break;
-  }
-  if(r>8){ctx.shadowBlur=0;ctx.rotate(-o.spin);ctx.font=`${Math.round(8*o.z)}px 'Share Tech Mono'`;ctx.textAlign='center';ctx.fillStyle=t>0.25?gc:'rgba(60,100,140,0.5)';ctx.fillText(o.label,0,r+12);}
-  ctx.restore();
-}
-function drawSphere(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;ctx.stroke();ctx.beginPath();ctx.arc(-r*.28,-r*.32,r*.2,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.16)';ctx.fill();}
-function drawHexBolt(r,c1,c2,c3){const R=r*.94;ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R):ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;i===0?ctx.moveTo(Math.cos(a)*r*.35,Math.sin(a)*r*.35):ctx.lineTo(Math.cos(a)*r*.35,Math.sin(a)*r*.35);}ctx.closePath();ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fill();ctx.fillStyle=c2;ctx.fillRect(-r*.17,r*.88,r*.34,r*.75);for(let i=0;i<4;i++){ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fillRect(-r*.17,r*.88+i*r*.19,r*.34,r*.08);}}
-function drawScrew(r,c1,c2,c3){ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(0,0,0,0.45)';ctx.lineWidth=r*.12;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-r*.42,0);ctx.lineTo(r*.42,0);ctx.stroke();ctx.beginPath();ctx.moveTo(0,-r*.42);ctx.lineTo(0,r*.42);ctx.stroke();const sg=ctx.createLinearGradient(-r*.18,0,r*.18,0);sg.addColorStop(0,c3);sg.addColorStop(.4,c1);sg.addColorStop(1,c3);ctx.fillStyle=sg;ctx.fillRect(-r*.17,r,r*.34,r*.9);ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=0.8;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(-r*.17,r+i*r*.18);ctx.lineTo(r*.17,r+i*r*.18+r*.06);ctx.stroke();}}
-function drawPlate(r,c1,c2,c3){const W=r*1.9,H=r*.6;const pg=ctx.createLinearGradient(0,-H/2,0,H/2);pg.addColorStop(0,c1);pg.addColorStop(.5,c2);pg.addColorStop(1,c3);ctx.fillStyle=pg;ctx.beginPath();ctx.moveTo(-W/2+3,-H/2);ctx.lineTo(W/2-3,-H/2);ctx.lineTo(W/2,-H/2+3);ctx.lineTo(W/2,H/2-3);ctx.lineTo(W/2-3,H/2);ctx.lineTo(-W/2+3,H/2);ctx.lineTo(-W/2,H/2-3);ctx.lineTo(-W/2,-H/2+3);ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=0.8;ctx.stroke();[[-W/2+5,0],[W/2-5,0]].forEach(([rx,ry])=>{ctx.beginPath();ctx.arc(rx,ry,2.2,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=0.5;ctx.stroke();});}
-function drawCoin(r,c1,c2,c3){const eg=ctx.createRadialGradient(0,0,r*.3,0,0,r);eg.addColorStop(0,c1);eg.addColorStop(.7,c2);eg.addColorStop(1,c3);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=eg;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(0,0,r-1.5,0,Math.PI*2);ctx.stroke();for(let i=0;i<18;i++){const a=i*Math.PI*2/18;ctx.beginPath();ctx.arc(Math.cos(a)*(r-1),Math.sin(a)*(r-1),.7,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.35)';ctx.fill();}ctx.beginPath();ctx.arc(0,0,r*.38,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.12)';ctx.fill();}
-function drawRod(r,c1,c2,c3){const H=r*2.2,W=r*.42;const rg=ctx.createLinearGradient(-W/2,0,W/2,0);rg.addColorStop(0,c3);rg.addColorStop(.3,c1);rg.addColorStop(.7,c2);rg.addColorStop(1,c3);ctx.fillStyle=rg;ctx.beginPath();ctx.roundRect(-W/2,-H/2,W,H,3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.12)';ctx.lineWidth=0.5;ctx.stroke();[-H/2,H/2].forEach(y=>{ctx.beginPath();ctx.ellipse(0,y,W/2,W/4,0,0,Math.PI*2);ctx.fillStyle=y<0?c1:c3;ctx.fill();});}
-function drawWasher(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.42,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.78)';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.5;ctx.beginPath();ctx.arc(0,0,r*.4,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=0.5;for(let i=0;i<8;i++){const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.44,Math.sin(a)*r*.44);ctx.lineTo(Math.cos(a)*r*.88,Math.sin(a)*r*.88);ctx.stroke();}}
-function drawShard(r,c1,c2,c3){const pts=[[0,-r*1.1],[r*.55,-r*.2],[r*.88,r*.58],[r*.2,r*.9],[-r*.5,r*.5],[-r*.84,r*.1],[-r*.3,-r*.8]];ctx.beginPath();pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=0.4;[[0,-r*1.1],[r*.88,r*.58],[-r*.84,r*.1]].forEach(([x,y])=>{ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(x,y);ctx.stroke();});}
-function drawNut(r,c1,c2,c3){ctx.beginPath();for(let i=0;i<6;i++){const a=i*Math.PI/3;i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.13)';ctx.lineWidth=0.8;ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.4,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.72)';ctx.fill();[r*.38,r*.31].forEach(rr=>{ctx.beginPath();ctx.arc(0,0,rr,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.09)';ctx.lineWidth=0.5;ctx.stroke();});}
-function drawCap(r,c1,c2,c3){ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.5;ctx.stroke();[.65,.45].forEach(f=>{ctx.beginPath();ctx.arc(0,0,r*f,0,Math.PI*2);ctx.strokeStyle='rgba(0,0,0,0.22)';ctx.lineWidth=0.8;ctx.stroke();});for(let i=0;i<6;i++){const a=i*Math.PI/3;ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.15,Math.sin(a)*r*.15);ctx.lineTo(Math.cos(a)*r*.4,Math.sin(a)*r*.4);ctx.strokeStyle='rgba(0,0,0,0.48)';ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();}const shG=ctx.createLinearGradient(-r*.15,0,r*.15,0);shG.addColorStop(0,c3);shG.addColorStop(.5,c1);shG.addColorStop(1,c3);ctx.fillStyle=shG;ctx.fillRect(-r*.15,r,r*.3,r*.9);}
-
-function render(now){
-  requestAnimationFrame(render);
-  const dt=Math.min((now-lastTime)/1000,0.05);lastTime=now;
-  ringT+=dt;pulseT+=dt;arcT+=dt;starT+=dt;
-  frameCount++;
-  if(now-lastFPS>600){fps=Math.round(frameCount/((now-lastFPS)/1000));frameCount=0;lastFPS=now;document.getElementById('st-fps').textContent=fps;document.getElementById('f-fps').textContent=fps+' FPS';}
-  magnetStr+=(targetStr-magnetStr)*Math.min(dt*7,1);
-  updateTelemetry(dt);updateInventory();
-  const pct=Math.round(magnetStr*100);document.getElementById('mt-p').textContent=pct+'%';
-  const mf=document.getElementById('mf');mf.style.width=pct+'%';mf.style.background=magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1e3555';
-  const stg=document.getElementById('st-g');stg.textContent=gesture==='fist'?'CLOSED_FIST':gesture==='pinch'?'PINCH':'OPEN_HAND';stg.className='sv '+(gesture==='fist'?'son':gesture==='pinch'?'spr':'sid');
-  const stm=document.getElementById('st-m');stm.textContent=magnetState;stm.className='sv '+(magnetState==='ON'?'son':magnetState==='PRECISION'?'spr':'sof');
-  const wrap=document.getElementById('scene-wrap');
-  if(canvas.width!==wrap.clientWidth||canvas.height!==wrap.clientHeight){canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);osc.width=osc.parentElement.clientWidth-32;osc.height=52;}
-  const W=canvas.width,H=canvas.height,gX=W/2,gY=H*.2,tY=H*.72;
-
-  // Physics
-  objects.forEach((o,idx)=>{
-    if(magnetStr>0.02){
-      const dx=gX-o.x,dy=gY-o.y,dist=Math.sqrt(dx*dx+dy*dy);
-      const maxR=magnetState==='ON'?255:125;
-      if(dist<22){
-        const col=idx%5,row=Math.floor(idx/5);
-        const tx=gX+(col-2)*21,ty=gY+28+row*21;
-        o.x+=(tx-o.x)*Math.min(dt*10,1);o.y+=(ty-o.y)*Math.min(dt*10,1);
-        o.vx=0;o.vy=0;o.attached=true;
-        o.spin+=(magnetState==='ON'?175:88)*dt*(Math.PI/180);
-        if(!o.wasAttached){o.trail=[];o.wasAttached=true;}
-      } else if(dist<maxR){
-        if(!o.attached&&magnetStr>0.05){o.trail.push({x:o.x,y:o.y});if(o.trail.length>10)o.trail.shift();}
-        const spd=(magnetStr*(magnetState==='ON'?295:115))/(dist*.4+.6);
-        o.vx+=(dx/dist)*spd*dt;o.vy+=(dy/dist)*spd*dt;o.vx*=0.84;o.vy*=0.84;
-        o.x+=o.vx*dt;o.y+=o.vy*dt;o.attached=false;o.wasAttached=false;
-      } else{o.vx*=.96;o.vy*=.96;o.attached=false;}
-    } else{
-      o.attached=false;o.wasAttached=false;o.trail=[];
-      if(o.y<tY-8){o.vy+=410*dt;o.vy=Math.min(o.vy,480);o.x+=o.vx*dt;o.y+=o.vy*dt;o.vx*=.97;if(o.y>=tY-8){o.y=tY-8;o.vy*=-.25;o.vx*=.65;}}
-      else{o.y=tY-8;o.x+=(o.rx-o.x)*Math.min(dt*1.9,1);o.vx*=.88;o.vy=0;}
-      o.spin+=o.spinV*.2*dt;
+    if (magnetStr > 0.02) {
+      const dx = gX-o.x, dy = gY-o.y, dist = Math.hypot(dx, dy);
+      if (dist < 24) {
+        // Attached — snap to cluster around glove
+        const col = idx%5, row = Math.floor(idx/5);
+        const tx = gX + (col-2)*22, ty = gY + 30 + row*24;
+        o.x += (tx-o.x)*Math.min(dt*11,1);
+        o.y += (ty-o.y)*Math.min(dt*11,1);
+        o.vx = 0; o.vy = 0; o.attached = true;
+        o.spin += (magnetState==='ON'?190:95)*dt*(Math.PI/180);
+        o.trail = [];
+        // Lerp colour toward pull colour
+        o.cr = lerpNum(o.cr, pr.r, dt*5);
+        o.cg = lerpNum(o.cg, pr.g, dt*5);
+        o.cb = lerpNum(o.cb, pr.b, dt*5);
+      } else if (dist < maxR) {
+        if (!o.attached) { o.trail.push({x:o.x,y:o.y}); if(o.trail.length>12) o.trail.shift(); }
+        const spd = (magnetStr*(magnetState==='ON'?310:125)) / (dist*0.4+0.6);
+        o.vx += (dx/dist)*spd*dt; o.vy += (dy/dist)*spd*dt;
+        o.vx *= 0.83; o.vy *= 0.83;
+        o.x += o.vx*dt; o.y += o.vy*dt;
+        o.attached = false;
+        const prox = Math.max(0, 1-dist/maxR) * magnetStr;
+        o.cr = lerpNum(o.cr, pr.r, dt*3.5*prox);
+        o.cg = lerpNum(o.cg, pr.g, dt*3.5*prox);
+        o.cb = lerpNum(o.cb, pr.b, dt*3.5*prox);
+      } else {
+        o.vx *= 0.96; o.vy *= 0.96; o.attached = false;
+      }
+    } else {
+      o.attached = false; o.trail = [];
+      if (o.y < tY - 9) {
+        o.vy += 420*dt; o.vy = Math.min(o.vy, 500);
+        o.x += o.vx*dt; o.y += o.vy*dt; o.vx *= 0.97;
+        if (o.y >= tY-9) { o.y=tY-9; o.vy*=-0.25; o.vx*=0.62; }
+      } else {
+        o.y = tY-9;
+        o.x += (o.rx-o.x)*Math.min(dt*1.9,1);
+        o.vx *= 0.88; o.vy = 0;
+      }
+      o.spin += o.spinV*0.2*dt;
+      o.cr = lerpNum(o.cr, ir.r, dt*2);
+      o.cg = lerpNum(o.cg, ir.g, dt*2);
+      o.cb = lerpNum(o.cb, ir.b, dt*2);
     }
   });
-  particles=particles.filter(p=>p.life>0);
-  particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=190*dt;p.vx*=.93;p.vy*=.93;p.life-=dt;});
+}
 
-  // Draw background
-  ctx.clearRect(0,0,W,H);
-  const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#03050f');bg.addColorStop(.6,'#060c1a');bg.addColorStop(1,'#070e1c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-  stars.forEach(s=>{const f=.6+.4*Math.sin(starT*1.8+s.fl);ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(170,200,255,${s.a*f})`;ctx.fill();});
+// ══════════════════════════════════════════════════════════════
+//  TELEMETRY
+// ══════════════════════════════════════════════════════════════
+function updateTelemetry(dt) {
+  const V = magnetStr*(magnetState==='ON'?24:8.4);
+  const A = magnetStr*(magnetState==='ON'?3.2:1.1);
+  const P = V*A;
+  const T = magnetStr*(magnetState==='ON'?0.88:0.31);
+  tempVal += (24 + P*0.65 - tempVal)*dt*0.38;
 
-  // Magnetic field
-  if(magnetStr>0.01){
-    const isOn=magnetState==='ON',rgb=isOn?'0,229,255':'255,171,0';
-    const maxR=isOn?162*magnetStr:85*magnetStr;
-    // Dashed radial lines
-    const nL=isOn?12:8;
-    for(let i=0;i<nL;i++){const ang=(i/nL)*Math.PI*2+ringT*.25,ll=maxR*(.65+.35*Math.sin(pulseT*2.3+i));ctx.save();ctx.globalAlpha=.11*magnetStr;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=.8;ctx.setLineDash([4,9]);ctx.lineDashOffset=-ringT*14;ctx.beginPath();ctx.moveTo(gX,gY);ctx.lineTo(gX+Math.cos(ang)*ll,gY+Math.sin(ang)*ll);ctx.stroke();ctx.setLineDash([]);ctx.restore();}
-    // Expanding elliptic rings
-    for(let i=0;i<6;i++){const ph=(ringT*(isOn?2.2:1.4)+i/6)%1,rr=ph*maxR,al=(1-ph)*.52*magnetStr;ctx.save();ctx.globalAlpha=al;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=1.8;ctx.shadowColor=`rgb(${rgb})`;ctx.shadowBlur=9;ctx.beginPath();ctx.ellipse(gX,gY,rr,rr*.38,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
-    // Core glow
-    const pulse=1+.18*Math.sin(pulseT*7);const glowR=maxR*.5*pulse;const gg=ctx.createRadialGradient(gX,gY,0,gX,gY,glowR);gg.addColorStop(0,`rgba(${rgb},${.2*magnetStr})`);gg.addColorStop(.5,`rgba(${rgb},${.06*magnetStr})`);gg.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=gg;ctx.beginPath();ctx.ellipse(gX,gY,glowR,glowR*.52,0,0,Math.PI*2);ctx.fill();
-    // Arcs
-    if(magnetStr>.55){const nA=isOn?3:2;for(let a=0;a<nA;a++){const aAng=arcT*4+(a/nA)*Math.PI*2,aR=26+11*Math.sin(arcT*9+a*2.2),vis=Math.max(0,Math.sin(arcT*6+a));ctx.save();ctx.globalAlpha=.45*magnetStr*vis;ctx.strokeStyle=`rgba(${rgb},.85)`;ctx.lineWidth=1.2;ctx.shadowColor=`rgb(${rgb})`;ctx.shadowBlur=8;ctx.beginPath();const nP=9;for(let p=0;p<=nP;p++){const t2=p/nP,ang=aAng+t2*Math.PI*.7,j=(p>0&&p<nP)?(Math.random()-.5)*7:0,px=gX+Math.cos(ang)*(aR+j),py=gY+Math.sin(ang)*(aR*.38+j*.38);p===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.stroke();ctx.restore();}}
+  const vc = magnetStr>0.05 ? (magnetState==='ON'?'':'a') : 'd';
+  setText('rc-v',  V.toFixed(1)+' V',  'rv '+vc);
+  setText('rc-a',  A.toFixed(2)+' A',  'rv '+vc);
+  setText('rc-t',  T.toFixed(2)+' T',  'rv '+vc);
+  setText('rc-tmp',tempVal.toFixed(0)+'°C','rv '+(tempVal>35?'a':'g'));
+
+  document.getElementById('hw').textContent = Math.round(P)+' W';
+  document.getElementById('hw').className = 'h-stat-val '+(P>5?(magnetState==='ON'?'vc':'va'):'vd');
+  document.getElementById('hs').textContent = T.toFixed(2)+' T';
+  document.getElementById('st-r').textContent =
+    (magnetStr*(magnetState==='ON'?9.2:3.9)).toFixed(1)+' m';
+
+  const noise = magnetStr>0.05
+    ? (Math.sin(pulseT*11)*0.28 + Math.sin(pulseT*7.1)*0.10 + Math.random()*0.05)
+    : (Math.random()*0.025-0.012);
+  oscHist.push(magnetStr*noise); oscHist.shift();
+  drawOsc();
+}
+
+function setText(id, txt, cls) {
+  const e = document.getElementById(id); e.textContent = txt;
+  if (cls) e.className = cls;
+}
+
+function drawOsc() {
+  const W = osc.width, H = osc.height;
+  octx.clearRect(0,0,W,H);
+  octx.fillStyle = 'rgba(0,0,0,.55)'; octx.fillRect(0,0,W,H);
+  // Grid
+  octx.strokeStyle='rgba(0,90,140,.22)'; octx.lineWidth=0.5;
+  [0.25,0.5,0.75].forEach(f=>{
+    octx.beginPath();octx.moveTo(0,H*f);octx.lineTo(W,H*f);octx.stroke();
+    octx.beginPath();octx.moveTo(W*f,0);octx.lineTo(W*f,H);octx.stroke();
+  });
+  const col = magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1a2840';
+  octx.strokeStyle=col; octx.lineWidth=1.6;
+  octx.shadowColor=col; octx.shadowBlur=magnetStr>0.05?6:0;
+  octx.beginPath();
+  oscHist.forEach((v,i)=>{
+    const x=(i/oscHist.length)*W, y=H/2-v*H*2.0;
+    i===0 ? octx.moveTo(x,y) : octx.lineTo(x,y);
+  });
+  octx.stroke(); octx.shadowBlur=0;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INVENTORY
+// ══════════════════════════════════════════════════════════════
+function buildInventory() {
+  const w = document.getElementById('obj-grid'); w.innerHTML='';
+  objects.forEach((o,i)=>{
+    const d = document.createElement('div');
+    d.className='oc'; d.id='chip-'+i;
+    d.innerHTML=`<div class="od" id="dot-${i}" style="background:${o.glow}"></div>${o.label}`;
+    w.appendChild(d);
+  });
+}
+
+function updateInventory() {
+  let att = 0;
+  objects.forEach((o,i)=>{
+    const c = document.getElementById('chip-'+i);
+    if (!c) return;
+    if (o.attached) { c.className='oc '+(magnetState==='ON'?'lv':'lp'); att++; }
+    else c.className='oc';
+  });
+  const n = objects.length;
+  document.getElementById('ho').textContent = att ? `${att}/${n} held` : `${n} idle`;
+  document.getElementById('ho').className = 'h-stat-val '+(att?'vc':'vg');
+  const st = document.getElementById('st-o');
+  if (att)             { st.textContent=att+' ATTRACTED'; st.className='sv son'; }
+  else if(magnetStr>0.05) { st.textContent='APPROACHING'; st.className='sv spr'; }
+  else                 { st.textContent='IDLE'; st.className='sv sid'; }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  OBJECT DRAWING — unique shape for each type
+// ══════════════════════════════════════════════════════════════
+
+function metalGrad(r, size, c1, c2, c3) {
+  const g = ctx.createRadialGradient(-size*.28,-size*.32,size*.04, 0,0,size);
+  g.addColorStop(0,c1); g.addColorStop(0.55,c2); g.addColorStop(1,c3);
+  return g;
+}
+
+function drawObject(o, glowFrac) {
+  const r = 11.5 * o.z;
+  const gCol = magnetState==='ON' ? o.glow : '#ffb040';
+  const ic = o.c;  // idle colours [dark, mid, bright]
+  const [dr,dg,db] = [o.cr,o.cg,o.cb];
+  const cidark  = `rgb(${Math.max(0,dr-55)},${Math.max(0,dg-55)},${Math.max(0,db-55)})`;
+  const cimid   = `rgb(${dr},${dg},${db})`;
+  const cibrite = `rgb(${Math.min(255,dr+65)},${Math.min(255,dg+65)},${Math.min(255,db+65)})`;
+
+  ctx.save();
+  ctx.translate(o.x, o.y);
+  ctx.rotate(o.spin);
+
+  // Bloom glow when attracted
+  if (glowFrac > 0.12) {
+    ctx.shadowColor = gCol;
+    ctx.shadowBlur  = 20 * glowFrac;
   }
 
-  // Trails
-  objects.forEach(o=>{if(o.trail.length<2)return;const rgb=magnetState==='ON'?'0,229,255':'255,171,0';for(let i=1;i<o.trail.length;i++){const t=i/o.trail.length;ctx.save();ctx.globalAlpha=t*.32*magnetStr;ctx.strokeStyle=`rgb(${rgb})`;ctx.lineWidth=3*(1-i/o.trail.length);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(o.trail[i-1].x,o.trail[i-1].y);ctx.lineTo(o.trail[i].x,o.trail[i].y);ctx.stroke();ctx.restore();}});
+  switch(o.shape) {
+    case 'sphere': drawSphere(r, cidark, cimid, cibrite, cibrite, glowFrac); break;
+    case 'coin':   drawCoin(r, cidark, cimid, cibrite); break;
+    case 'plate':  drawPlate(r, cidark, cimid, cibrite); break;
+    case 'rod':    drawRod(r, cidark, cimid, cibrite); break;
+    case 'shard':  drawShard(r, cidark, cimid, cibrite); break;
+    case 'washer': drawWasher(r, cidark, cimid, cibrite); break;
+    case 'bolt':   drawBolt(r, cidark, cimid, cibrite); break;
+    case 'nut':    drawNut(r, cidark, cimid, cibrite); break;
+    case 'screw':  drawScrew(r, cidark, cimid, cibrite); break;
+    case 'cap':    drawCap(r, cidark, cimid, cibrite); break;
+  }
 
-  // Drop shadows
-  objects.forEach(o=>{const d=tY-o.y;if(d>2){const sz=Math.max(3,10*(1-d/270));ctx.save();ctx.globalAlpha=Math.max(0,.25*(1-d/270));ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(o.x,tY+2,sz,sz*.28,0,0,Math.PI*2);ctx.fill();ctx.restore();}});
-
-  // Table
-  const tg=ctx.createLinearGradient(0,tY,0,H);tg.addColorStop(0,'#1a0f06');tg.addColorStop(.15,'#0e0804');tg.addColorStop(1,'#070503');ctx.fillStyle=tg;ctx.fillRect(0,tY,W,H-tY);
-  const eg=ctx.createLinearGradient(0,0,W,0);const eC=magnetState==='ON'?'0,229,255':magnetState==='PRECISION'?'255,171,0':'70,110,55';eg.addColorStop(0,'rgba(0,0,0,0)');eg.addColorStop(.2,`rgba(${eC},${.22*magnetStr+.07})`);eg.addColorStop(.8,`rgba(${eC},${.22*magnetStr+.07})`);eg.addColorStop(1,'rgba(0,0,0,0)');ctx.strokeStyle=eg;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,tY);ctx.lineTo(W,tY);ctx.stroke();
-  ctx.save();ctx.globalAlpha=.07;ctx.strokeStyle='#0040a0';ctx.lineWidth=.5;for(let xi=0;xi<W;xi+=38){ctx.beginPath();ctx.moveTo(xi,tY);ctx.lineTo(xi,H);ctx.stroke();}for(let yi=tY;yi<H;yi+=38){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(W,yi);ctx.stroke();}ctx.restore();
-
-  // Objects
-  objects.forEach(o=>{const dist=Math.hypot(o.x-gX,o.y-gY),t=o.attached?1:Math.max(0,(1-dist/215))*magnetStr;drawObject(o,t);});
-
-  // Particles
-  particles.forEach(p=>{const lf=p.life/p.ml;ctx.save();ctx.globalAlpha=lf*.8;ctx.fillStyle=`rgb(${p.col[0]},${p.col[1]},${p.col[2]})`;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=5;ctx.beginPath();ctx.arc(p.x,p.y,p.r*lf,0,Math.PI*2);ctx.fill();ctx.restore();});
-
-  // Glove
-  drawGlove(gX,gY);
-
-  // Corner HUD
-  ctx.strokeStyle='rgba(0,180,255,0.22)';ctx.lineWidth=1.5;
-  [[0,20,0,0,20,0],[W-20,0,W,0,W,20],[0,H-20,0,H,20,H],[W-20,H,W,H,W,H-20]].forEach(([ax,ay,bx,by,cx2,cy2])=>{ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.lineTo(cx2,cy2);ctx.stroke();});
-  ctx.font="400 9px 'Share Tech Mono'";ctx.textAlign='center';ctx.fillStyle='rgba(0,130,180,0.35)';ctx.fillText('▲  ELECTROMAGNETIC INTERACTION ZONE  ▲',W/2,H-7);
+  // Label
+  if (r > 8) {
+    ctx.shadowBlur = 0;
+    ctx.rotate(-o.spin);
+    ctx.font = `${Math.round(7.5*o.z)}px 'Share Tech Mono'`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = glowFrac>0.22 ? gCol : 'rgba(55,95,135,0.55)';
+    ctx.fillText(o.label, 0, r+12);
+  }
+  ctx.restore();
 }
 
-function drawGlove(cx,cy){
-  const isOn=magnetState==='ON',isPr=magnetState==='PRECISION';
-  let base,hi,coil;
-  if(magnetStr>.4&&isOn){base='#003570';hi='#0088d4';coil='#00ccff';}
-  else if(magnetStr>.1&&isPr){base='#5c2e00';hi='#c07800';coil='#ffc000';}
-  else{base='#101c3c';hi='#223060';coil='#9a7415';}
+function drawSphere(r, c1, c2, c3, ch, gf) {
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.fillStyle = metalGrad(ctx, r, c1, c2, c3);
+  ctx.fill();
+  // Specular highlight
+  ctx.beginPath(); ctx.arc(-r*.30,-r*.34, r*.22, 0, Math.PI*2);
+  ctx.fillStyle = `rgba(255,255,255,${0.10+gf*0.12})`; ctx.fill();
+  // Edge rim
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.stroke();
+}
+
+function drawCoin(r, c1, c2, c3) {
+  const eg = ctx.createRadialGradient(0,0,r*.25, 0,0,r);
+  eg.addColorStop(0,c3); eg.addColorStop(.6,c2); eg.addColorStop(1,c1);
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle=eg; ctx.fill();
+  // Milled edge dots
+  for (let i=0;i<20;i++) {
+    const a=i*Math.PI*2/20;
+    ctx.beginPath(); ctx.arc(Math.cos(a)*(r-.8),Math.sin(a)*(r-.8),.7,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.30)'; ctx.fill();
+  }
+  // Inner engraving circle
+  ctx.beginPath(); ctx.arc(0,0,r*.60,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,0,0,.20)'; ctx.lineWidth=1.2; ctx.stroke();
+  // Specular
+  ctx.beginPath(); ctx.arc(-r*.3,-r*.3,r*.15,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.18)'; ctx.fill();
+}
+
+function drawPlate(r, c1, c2, c3) {
+  const W=r*1.95, H=r*.62;
+  const pg = ctx.createLinearGradient(0,-H/2, 0,H/2);
+  pg.addColorStop(0,c3); pg.addColorStop(.5,c2); pg.addColorStop(1,c1);
+  ctx.fillStyle=pg;
+  ctx.beginPath();
+  ctx.moveTo(-W/2+3,-H/2); ctx.lineTo(W/2-3,-H/2); ctx.lineTo(W/2,-H/2+3);
+  ctx.lineTo(W/2,H/2-3); ctx.lineTo(W/2-3,H/2); ctx.lineTo(-W/2+3,H/2);
+  ctx.lineTo(-W/2,H/2-3); ctx.lineTo(-W/2,-H/2+3); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=0.7; ctx.stroke();
+  // Bolt holes
+  [[-W/2+6,0],[W/2-6,0]].forEach(([bx,by])=>{
+    ctx.beginPath(); ctx.arc(bx,by,2.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=0.5; ctx.stroke();
+  });
+  // Surface scratch lines
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=0.4;
+  for(let s=-3;s<=3;s++){
+    ctx.beginPath(); ctx.moveTo(-W/2+8,s*H/8); ctx.lineTo(W/2-8,s*H/8+1.5); ctx.stroke();
+  }
+}
+
+function drawRod(r, c1, c2, c3) {
+  const H=r*2.3, W=r*.44;
+  const rg = ctx.createLinearGradient(-W/2,0, W/2,0);
+  rg.addColorStop(0,c1); rg.addColorStop(.35,c3); rg.addColorStop(.65,c2); rg.addColorStop(1,c1);
+  ctx.fillStyle=rg;
+  ctx.beginPath(); ctx.roundRect(-W/2,-H/2,W,H,3); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.10)'; ctx.lineWidth=0.5; ctx.stroke();
+  // End caps
+  [-H/2,H/2].forEach(y=>{
+    ctx.beginPath(); ctx.ellipse(0,y,W/2,W/4,0,0,Math.PI*2);
+    ctx.fillStyle=(y<0)?c3:c1; ctx.fill();
+  });
+}
+
+function drawShard(r, c1, c2, c3) {
+  // Crystal shard polygon
+  const pts = [[0,-r*1.15],[r*.52,-r*.22],[r*.90,r*.55],[r*.18,r*.92],
+                [-r*.52,r*.52],[-r*.88,r*.08],[-r*.28,-r*.82]];
+  ctx.beginPath();
+  pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+  ctx.closePath();
+  const sg = ctx.createLinearGradient(-r,r, r,-r);
+  sg.addColorStop(0,c1); sg.addColorStop(.5,c3); sg.addColorStop(1,c2);
+  ctx.fillStyle=sg; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=0.9; ctx.stroke();
+  // Internal facet lines
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=0.5;
+  [[0,-r*1.15],[r*.90,r*.55],[-r*.88,r*.08]].forEach(([x,y])=>{
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(x,y); ctx.stroke();
+  });
+  // Specular on top facet
+  ctx.beginPath(); ctx.moveTo(0,-r*1.15); ctx.lineTo(r*.52,-r*.22); ctx.lineTo(0,0);
+  ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fill();
+}
+
+function drawWasher(r, c1, c2, c3) {
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.09)'; ctx.lineWidth=0.7; ctx.stroke();
+  // Centre hole
+  ctx.beginPath(); ctx.arc(0,0,r*.44,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.82)'; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=0.5; ctx.stroke();
+  // Radial spokes
+  ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.lineWidth=0.6;
+  for(let i=0;i<8;i++){
+    const a=i*Math.PI/4;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*r*.46,Math.sin(a)*r*.46);
+    ctx.lineTo(Math.cos(a)*r*.90,Math.sin(a)*r*.90);
+    ctx.stroke();
+  }
+}
+
+function drawBolt(r, c1, c2, c3) {
+  // Hex head
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=i*Math.PI/3-Math.PI/6;
+    i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+  ctx.closePath();
+  ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=0.9; ctx.stroke();
+  // Inner hex
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;
+    i===0?ctx.moveTo(Math.cos(a)*r*.36,Math.sin(a)*r*.36):ctx.lineTo(Math.cos(a)*r*.36,Math.sin(a)*r*.36);}
+  ctx.closePath(); ctx.fillStyle='rgba(0,0,0,.65)'; ctx.fill();
+  // Shaft
+  const sg=ctx.createLinearGradient(-r*.17,0,r*.17,0);
+  sg.addColorStop(0,c1);sg.addColorStop(.4,c3);sg.addColorStop(1,c1);
+  ctx.fillStyle=sg; ctx.fillRect(-r*.16,r*.90,r*.32,r*.85);
+  // Thread lines
+  ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.lineWidth=0.7;
+  for(let k=0;k<5;k++){
+    ctx.beginPath();
+    ctx.moveTo(-r*.16,r*.95+k*r*.17);
+    ctx.lineTo(r*.16,r*.95+k*r*.17+r*.06);
+    ctx.stroke();
+  }
+}
+
+function drawNut(r, c1, c2, c3) {
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;
+    i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+  ctx.closePath();
+  ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=0.8; ctx.stroke();
+  // Threaded hole
+  ctx.beginPath(); ctx.arc(0,0,r*.42,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.78)'; ctx.fill();
+  [r*.40,r*.31].forEach(rr=>{
+    ctx.beginPath(); ctx.arc(0,0,rr,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=0.5; ctx.stroke();
+  });
+}
+
+function drawScrew(r, c1, c2, c3) {
+  // Hex drive head
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;
+    i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+  ctx.closePath();
+  ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3); ctx.fill();
+  // Phillips cross drive
+  ctx.strokeStyle='rgba(0,0,0,.48)'; ctx.lineWidth=r*.13; ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(-r*.44,0);ctx.lineTo(r*.44,0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-r*.44);ctx.lineTo(0,r*.44);ctx.stroke();
+  // Shaft
+  const sg=ctx.createLinearGradient(-r*.17,0,r*.17,0);
+  sg.addColorStop(0,c1);sg.addColorStop(.5,c3);sg.addColorStop(1,c1);
+  ctx.fillStyle=sg; ctx.fillRect(-r*.16,r,r*.32,r*.92);
+  ctx.strokeStyle='rgba(0,0,0,.20)'; ctx.lineWidth=0.7;
+  for(let k=0;k<5;k++){
+    ctx.beginPath();
+    ctx.moveTo(-r*.16,r+k*r*.18);
+    ctx.lineTo(r*.16,r+k*r*.18+r*.07);
+    ctx.stroke();
+  }
+}
+
+function drawCap(r, c1, c2, c3) {
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.fillStyle=metalGrad(ctx,r,c1,c2,c3); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.09)'; ctx.lineWidth=0.6; ctx.stroke();
+  [.66,.46].forEach(f=>{
+    ctx.beginPath(); ctx.arc(0,0,r*f,0,Math.PI*2);
+    ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.lineWidth=0.9; ctx.stroke();
+  });
+  // Hex socket
+  ctx.beginPath();
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;
+    i===0?ctx.moveTo(Math.cos(a)*r*.18,Math.sin(a)*r*.18):ctx.lineTo(Math.cos(a)*r*.18,Math.sin(a)*r*.18);}
+  ctx.closePath(); ctx.strokeStyle='rgba(0,0,0,.50)'; ctx.lineWidth=1.6; ctx.stroke();
+  // Shaft
+  const sg=ctx.createLinearGradient(-r*.16,0,r*.16,0);
+  sg.addColorStop(0,c1);sg.addColorStop(.5,c3);sg.addColorStop(1,c1);
+  ctx.fillStyle=sg; ctx.fillRect(-r*.15,r,r*.30,r*.92);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GLOVE DRAWING
+// ══════════════════════════════════════════════════════════════
+function drawGlove(cx, cy) {
+  const isOn = magnetState==='ON', isPr = magnetState==='PRECISION';
+  const str  = magnetStr;
+  let baseC, hiC, coilC;
+
+  if (str > 0.4 && isOn)      { baseC='#002f6a'; hiC='#0077c8'; coilC='#00ccff'; }
+  else if (str > 0.1 && isPr) { baseC='#562000'; hiC='#b87020'; coilC='#ffcc00'; }
+  else                         { baseC='#0c1830'; hiC='#1e2e5a'; coilC='#907010'; }
+
+  const glowCol = isOn ? '#00e5ff' : isPr ? '#ffab00' : 'transparent';
+
   ctx.save();
-  if(magnetStr>.1){ctx.shadowColor=isOn?'#00e5ff':isPr?'#ffab00':'transparent';ctx.shadowBlur=magnetStr*26;}
-  const cg=ctx.createLinearGradient(cx-2,0,cx+2,0);cg.addColorStop(0,'#060f20');cg.addColorStop(.5,'#192840');cg.addColorStop(1,'#060f20');ctx.fillStyle=cg;ctx.fillRect(cx-2,0,4,cy-13);
-  const gW=82,gH=24;const pg=ctx.createLinearGradient(cx-gW/2,cy-gH/2,cx+gW/2,cy+gH/2);pg.addColorStop(0,hi);pg.addColorStop(.5,base);pg.addColorStop(1,'#060e1c');ctx.fillStyle=pg;ctx.beginPath();ctx.roundRect(cx-gW/2,cy-gH/2,gW,gH,5);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.09)';ctx.lineWidth=0.8;ctx.beginPath();ctx.roundRect(cx-gW/2,cy-gH/2,gW,gH,5);ctx.stroke();
-  const cb=ctx.createLinearGradient(cx,cy-3,cx,cy+3);cb.addColorStop(0,coil+'77');cb.addColorStop(.5,coil);cb.addColorStop(1,coil+'33');ctx.fillStyle=cb;ctx.fillRect(cx-gW/2+7,cy-3,gW-14,6);
-  ctx.strokeStyle=coil+'44';ctx.lineWidth=.6;for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(cx-gW/2+7+i*((gW-14)/7),cy-3);ctx.lineTo(cx-gW/2+7+(i+.5)*((gW-14)/7),cy+3);ctx.stroke();}
-  [-29,-9,10,29].forEach(fx=>{const fg=ctx.createLinearGradient(cx+fx-6,cy-gH/2-18,cx+fx+6,cy-gH/2);fg.addColorStop(0,base);fg.addColorStop(1,hi);ctx.fillStyle=fg;ctx.beginPath();ctx.roundRect(cx+fx-6,cy-gH/2-17,13,17,3);ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=.5;ctx.beginPath();ctx.roundRect(cx+fx-6,cy-gH/2-17,13,17,3);ctx.stroke();ctx.strokeStyle='rgba(0,0,0,0.28)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx+fx-6,cy-gH/2-7);ctx.lineTo(cx+fx+7,cy-gH/2-7);ctx.stroke();});
-  ctx.fillStyle=hi;ctx.beginPath();ctx.roundRect(cx-gW/2-12,cy-8,11,15,3);ctx.fill();
-  ctx.restore();ctx.save();ctx.shadowBlur=0;
-  ctx.font="700 10px 'Share Tech Mono'";ctx.textAlign='center';
-  const V=magnetStr*(isOn?24:8.4),lbl=magnetState==='ON'?`● MAGNET ON  [${V.toFixed(0)}V]`:magnetState==='PRECISION'?`◉ PRECISION  [${V.toFixed(1)}V]`:'○ MAGNET OFF';
-  const plse=magnetStr>.05?.6+.4*Math.sin(pulseT*5):.38;
-  ctx.fillStyle=magnetState==='ON'?`rgba(0,229,255,${plse})`:magnetState==='PRECISION'?`rgba(255,171,0,${plse})`:'rgba(50,80,120,0.45)';
-  ctx.fillText(lbl,cx,cy-gH/2-27);ctx.restore();
+  if (str > 0.08) { ctx.shadowColor=glowCol; ctx.shadowBlur=str*32; }
+
+  // ── Cable from top ──
+  const cg = ctx.createLinearGradient(cx-2,0,cx+2,0);
+  cg.addColorStop(0,'#06101e'); cg.addColorStop(.5,'#14223a'); cg.addColorStop(1,'#06101e');
+  ctx.fillStyle=cg; ctx.fillRect(cx-2.5, 0, 5, cy-14);
+
+  // ── Palm body ──
+  const gW=86, gH=26;
+  const pg = ctx.createLinearGradient(cx-gW/2,cy-gH/2, cx+gW/2,cy+gH/2);
+  pg.addColorStop(0,hiC); pg.addColorStop(.5,baseC); pg.addColorStop(1,'#050d1c');
+  ctx.fillStyle=pg;
+  ctx.beginPath(); ctx.roundRect(cx-gW/2, cy-gH/2, gW, gH, 5); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.roundRect(cx-gW/2, cy-gH/2, gW, gH, 5); ctx.stroke();
+
+  // ── Electromagnetic coil band ──
+  const coilGrad = ctx.createLinearGradient(cx, cy-4, cx, cy+4);
+  coilGrad.addColorStop(0, coilC+'99');
+  coilGrad.addColorStop(.5, coilC);
+  coilGrad.addColorStop(1, coilC+'44');
+  ctx.fillStyle=coilGrad; ctx.fillRect(cx-gW/2+8, cy-4, gW-16, 8);
+  // Coil winding marks
+  ctx.strokeStyle=coilC+'55'; ctx.lineWidth=0.7;
+  const cw = gW-16;
+  for(let k=0;k<8;k++){
+    ctx.beginPath();
+    ctx.moveTo(cx-gW/2+8 + k*(cw/8), cy-4);
+    ctx.lineTo(cx-gW/2+8 + (k+0.5)*(cw/8), cy+4);
+    ctx.stroke();
+  }
+  // Second coil stripe
+  ctx.fillStyle = coilGrad;
+  ctx.fillRect(cx-gW/2+8, cy-gH/2+3, gW-16, 4);
+
+  // ── Finger extensions ──
+  [-30,-10,10,30].forEach(fx=>{
+    const fg = ctx.createLinearGradient(cx+fx-7,cy-gH/2-19, cx+fx+7,cy-gH/2);
+    fg.addColorStop(0,baseC); fg.addColorStop(1,hiC);
+    ctx.fillStyle=fg;
+    ctx.beginPath(); ctx.roundRect(cx+fx-6.5, cy-gH/2-18, 14, 18, 3); ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=0.5;
+    ctx.beginPath(); ctx.roundRect(cx+fx-6.5, cy-gH/2-18, 14, 18, 3); ctx.stroke();
+    // Knuckle crease
+    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=0.9;
+    ctx.beginPath(); ctx.moveTo(cx+fx-6.5,cy-gH/2-8); ctx.lineTo(cx+fx+7.5,cy-gH/2-8); ctx.stroke();
+  });
+
+  // ── Thumb ──
+  const tg = ctx.createLinearGradient(cx-gW/2-13,cy-9, cx-gW/2-2,cy+8);
+  tg.addColorStop(0,baseC); tg.addColorStop(1,hiC);
+  ctx.fillStyle=tg;
+  ctx.beginPath(); ctx.roundRect(cx-gW/2-13, cy-8, 12, 16, 3); ctx.fill();
+
+  // ── LED status light ──
+  const ledCol = isOn ? '#00ff80' : isPr ? '#ffcc00' : '#1a3060';
+  ctx.shadowColor = ledCol; ctx.shadowBlur = str*18;
+  ctx.beginPath(); ctx.arc(cx+gW/2-10, cy, 4, 0, Math.PI*2);
+  const ledG = ctx.createRadialGradient(cx+gW/2-11,cy-1,0.5, cx+gW/2-10,cy,4);
+  ledG.addColorStop(0,'#ffffff'); ledG.addColorStop(.4,ledCol); ledG.addColorStop(1,ledCol+'44');
+  ctx.fillStyle=ledG; ctx.fill();
+
+  ctx.restore(); ctx.save();
+
+  // ── State label below glove ──
+  const plse = str > 0.05 ? 0.58+0.42*Math.sin(pulseT*5.2) : 0.35;
+  const V = str*(isOn?24:8.4);
+  const lbl = magnetState==='ON'
+    ? `● MAGNET ON  [${V.toFixed(0)}V / ${(str*3.2).toFixed(1)}A]`
+    : magnetState==='PRECISION'
+    ? `◉ PRECISION  [${V.toFixed(1)}V]`
+    : '○ MAGNET OFF';
+  ctx.font = "bold 10px 'Share Tech Mono'";
+  ctx.textAlign = 'center';
+  const lblCol = isOn ? `rgba(0,229,255,${plse})`
+    : isPr  ? `rgba(255,171,0,${plse})`
+    :          'rgba(45,75,110,0.42)';
+  ctx.fillStyle = lblCol;
+  ctx.shadowColor = isOn?'#00e5ff':isPr?'#ffab00':'transparent';
+  ctx.shadowBlur  = isOn||isPr ? str*14 : 0;
+  ctx.fillText(lbl, cx, cy-gH/2-30);
+  ctx.restore();
 }
 
-function init(){
-  const w=document.getElementById('scene-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;
-  osc.width=osc.parentElement.clientWidth-32;osc.height=52;
-  initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);setGesture('open');requestAnimationFrame(render);
+// ══════════════════════════════════════════════════════════════
+//  MAGNETIC FIELD RENDERING
+// ══════════════════════════════════════════════════════════════
+function drawField(gX, gY) {
+  if (magnetStr < 0.01) return;
+  const isOn = magnetState==='ON';
+  const rgb  = isOn ? '0,229,255' : '255,171,0';
+  const maxR = isOn ? 175*magnetStr : 92*magnetStr;
+
+  // ── Radial dashed field lines ──
+  const nLines = isOn ? 14 : 9;
+  for(let i=0;i<nLines;i++){
+    const ang = (i/nLines)*Math.PI*2 + ringT*0.22;
+    const len = maxR*(0.62 + 0.38*Math.sin(pulseT*2.1+i));
+    ctx.save();
+    ctx.globalAlpha = 0.11*magnetStr;
+    ctx.strokeStyle=`rgb(${rgb})`; ctx.lineWidth=0.9;
+    ctx.setLineDash([5,10]); ctx.lineDashOffset=-ringT*18;
+    ctx.beginPath(); ctx.moveTo(gX,gY);
+    ctx.lineTo(gX+Math.cos(ang)*len, gY+Math.sin(ang)*len);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  }
+
+  // ── Expanding elliptic rings ──
+  const ringCount = isOn ? 7 : 5;
+  const ringSpeed = isOn ? 2.3 : 1.45;
+  for(let i=0;i<ringCount;i++){
+    const ph     = (ringT*ringSpeed + i/ringCount) % 1.0;
+    const phE    = easeOut(ph);
+    const rr     = phE * maxR;
+    const alpha  = (1-ph) * 0.60 * magnetStr;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = `rgb(${rgb})`;
+    ctx.lineWidth   = 1.9 - ph*1.1;
+    ctx.shadowColor = `rgb(${rgb})`; ctx.shadowBlur = 9;
+    ctx.beginPath(); ctx.ellipse(gX, gY, rr, rr*0.38, 0, 0, Math.PI*2);
+    ctx.stroke(); ctx.restore();
+  }
+
+  // ── Core glow blob ──
+  const pulse = 1 + 0.18*Math.sin(pulseT*7.2);
+  const glowR = maxR*0.52*pulse;
+  const gg = ctx.createRadialGradient(gX,gY,0, gX,gY,glowR);
+  gg.addColorStop(0, `rgba(${rgb},${0.22*magnetStr})`);
+  gg.addColorStop(.5, `rgba(${rgb},${0.07*magnetStr})`);
+  gg.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle=gg;
+  ctx.beginPath(); ctx.ellipse(gX,gY,glowR,glowR*0.50,0,0,Math.PI*2); ctx.fill();
+
+  // ── Lightning arcs to nearby objects ──
+  if (magnetStr > 0.55) {
+    const nArcs = isOn ? 3 : 2;
+    for(let a=0;a<nArcs;a++){
+      const aAng = arcT*3.8+(a/nArcs)*Math.PI*2;
+      const aR   = 28+12*Math.sin(arcT*8.5+a*2.3);
+      const vis  = Math.max(0, Math.sin(arcT*5.5+a));
+      if (vis < 0.1) continue;
+      ctx.save();
+      ctx.globalAlpha=0.55*magnetStr*vis;
+      ctx.strokeStyle=`rgba(${rgb},.9)`;
+      ctx.lineWidth=1.3; ctx.shadowColor=`rgb(${rgb})`; ctx.shadowBlur=10;
+      ctx.beginPath();
+      const nSeg=10;
+      for(let s=0;s<=nSeg;s++){
+        const t2=s/nSeg, ang=aAng+t2*Math.PI*0.75;
+        const jitter=(s>0&&s<nSeg)?(Math.random()-.5)*8:0;
+        const px=gX+Math.cos(ang)*(aR+jitter);
+        const py=gY+Math.sin(ang)*(aR*0.38+jitter*0.38);
+        s===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+  }
+
+  // ── Attraction beam to attached objects ──
+  objects.forEach(o=>{
+    if(!o.attached||magnetStr<0.3) return;
+    ctx.save();
+    ctx.globalAlpha=0.18*magnetStr;
+    ctx.strokeStyle=`rgb(${rgb})`; ctx.lineWidth=1.2;
+    ctx.setLineDash([3,6]); ctx.lineDashOffset=-ringT*22;
+    ctx.beginPath(); ctx.moveTo(gX,gY); ctx.lineTo(o.x,o.y); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  });
 }
-window.addEventListener('resize',()=>{const w=document.getElementById('scene-wrap');canvas.width=w.clientWidth;canvas.height=w.clientHeight;osc.width=osc.parentElement.clientWidth-32;initObjects(canvas.width/2,canvas.height*.72);buildInventory();initStars(canvas.width,canvas.height);});
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER LOOP
+// ══════════════════════════════════════════════════════════════
+function render(now) {
+  requestAnimationFrame(render);
+  const dt = Math.min((now-lastTime)/1000, 0.05); lastTime=now;
+  ringT += dt; pulseT += dt; starT += dt; arcT += dt;
+
+  frameCount++;
+  if (now-lastFPS > 600) {
+    fps = Math.round(frameCount/((now-lastFPS)/1000));
+    frameCount=0; lastFPS=now;
+    document.getElementById('st-fps').textContent = fps;
+    document.getElementById('f-fps').textContent  = fps+' FPS';
+  }
+
+  // Smooth strength
+  magnetStr += (targetStr-magnetStr)*Math.min(dt*6.5,1);
+
+  // Physics + UI
+  const W=canvas.width, H=canvas.height;
+  const gX=W/2, gY=H*0.20, tY=H*0.72;
+  updatePhysics(W, H, dt);
+  updateParticles(dt);
+  updateTelemetry(dt);
+  updateInventory();
+
+  // Meter
+  const pct = Math.round(magnetStr*100);
+  document.getElementById('mt-p').textContent = pct+'%';
+  const mfEl = document.getElementById('mf');
+  mfEl.style.width=pct+'%';
+  mfEl.style.background = magnetState==='ON'?'#00e5ff':magnetState==='PRECISION'?'#ffab00':'#1a3050';
+
+  // Status text
+  const stg=document.getElementById('st-g');
+  stg.textContent=gesture==='fist'?'CLOSED_FIST':gesture==='pinch'?'PINCH':'OPEN_HAND';
+  stg.className='sv '+(gesture==='fist'?'son':gesture==='pinch'?'spr':'sid');
+  const stm=document.getElementById('st-m');
+  stm.textContent=magnetState;
+  stm.className='sv '+(magnetState==='ON'?'son':magnetState==='PRECISION'?'spr':'sof');
+
+  // Resize guard
+  const wrap=document.getElementById('scene-wrap');
+  if(canvas.width!==wrap.clientWidth||canvas.height!==wrap.clientHeight){
+    canvas.width=wrap.clientWidth; canvas.height=wrap.clientHeight;
+    initObjects(canvas.width/2, canvas.height*.72);
+    buildInventory();
+    initStars(canvas.width, canvas.height);
+    osc.width=osc.parentElement.clientWidth-30; osc.height=50;
+  }
+
+  // ── BACKGROUND ──────────────────────────────────────────────
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#020408'); bg.addColorStop(.55,'#050b16'); bg.addColorStop(1,'#060d1a');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  // Stars
+  stars.forEach(s=>{
+    const f=0.6+0.4*Math.sin(starT*1.7+s.fl);
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(170,200,255,${s.a*f})`; ctx.fill();
+  });
+
+  // Faint nebula blob top-left
+  const nb = ctx.createRadialGradient(W*.15,H*.18,0, W*.15,H*.18,W*.28);
+  nb.addColorStop(0,`rgba(0,50,120,${0.05+magnetStr*0.03})`);
+  nb.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=nb; ctx.fillRect(0,0,W,H);
+
+  // ── FIELD RINGS ─────────────────────────────────────────────
+  drawField(gX, gY);
+
+  // ── TRAILS ──────────────────────────────────────────────────
+  objects.forEach(o=>{
+    if(o.trail.length<2) return;
+    const rgb=magnetState==='ON'?'0,229,255':'255,171,0';
+    for(let t2=1;t2<o.trail.length;t2++){
+      const frac=t2/o.trail.length;
+      ctx.save(); ctx.globalAlpha=frac*0.38*magnetStr;
+      ctx.strokeStyle=`rgb(${rgb})`; ctx.lineWidth=3*(1-t2/o.trail.length);
+      ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(o.trail[t2-1].x,o.trail[t2-1].y);
+      ctx.lineTo(o.trail[t2].x,o.trail[t2].y); ctx.stroke(); ctx.restore();
+    }
+  });
+
+  // ── DROP SHADOWS ─────────────────────────────────────────────
+  objects.forEach(o=>{
+    const d=tY-o.y;
+    if(d<2) return;
+    const sz=Math.max(2.5,10*(1-d/280));
+    ctx.save(); ctx.globalAlpha=Math.max(0,.28*(1-d/280));
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(o.x,tY+2,sz,sz*0.25,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // ── TABLE ────────────────────────────────────────────────────
+  const tg=ctx.createLinearGradient(0,tY,0,H);
+  tg.addColorStop(0,'#180e05'); tg.addColorStop(.12,'#0c0804'); tg.addColorStop(1,'#060503');
+  ctx.fillStyle=tg; ctx.fillRect(0,tY,W,H-tY);
+  // Table edge glow
+  const eRgb = magnetState==='ON'?'0,229,255':magnetState==='PRECISION'?'255,171,0':'60,110,50';
+  const eg=ctx.createLinearGradient(0,0,W,0);
+  eg.addColorStop(0,'rgba(0,0,0,0)');
+  eg.addColorStop(.2,`rgba(${eRgb},${0.24*magnetStr+0.07})`);
+  eg.addColorStop(.8,`rgba(${eRgb},${0.24*magnetStr+0.07})`);
+  eg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.strokeStyle=eg; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.moveTo(0,tY); ctx.lineTo(W,tY); ctx.stroke();
+  // Table grid
+  ctx.save(); ctx.globalAlpha=0.065; ctx.strokeStyle='#0040a0'; ctx.lineWidth=0.5;
+  for(let xi=0;xi<W;xi+=42){ctx.beginPath();ctx.moveTo(xi,tY);ctx.lineTo(xi,H);ctx.stroke();}
+  for(let yi=tY;yi<H;yi+=42){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(W,yi);ctx.stroke();}
+  ctx.restore();
+
+  // ── OBJECTS ──────────────────────────────────────────────────
+  objects.forEach(o=>{
+    const dist  = Math.hypot(o.x-gX, o.y-gY);
+    const prox  = o.attached ? 1.0 : Math.max(0,(1-dist/220))*magnetStr;
+    drawObject(o, prox);
+  });
+
+  // ── PARTICLES ────────────────────────────────────────────────
+  particles.forEach(p=>{
+    const lf=p.life/p.ml;
+    ctx.save(); ctx.globalAlpha=lf*0.85;
+    ctx.fillStyle=`rgb(${p.r},${p.g},${p.b})`;
+    ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=6;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz*lf,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // ── GLOVE ────────────────────────────────────────────────────
+  drawGlove(gX, gY);
+
+  // ── CORNER HUD BRACKETS ──────────────────────────────────────
+  ctx.strokeStyle='rgba(0,180,255,.20)'; ctx.lineWidth=1.5;
+  [[0,20,0,0,20,0],[W-20,0,W,0,W,20],[0,H-20,0,H,20,H],[W-20,H,W,H,W,H-20]].forEach(
+    ([ax,ay,bx,by,cx2,cy2])=>{ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.lineTo(cx2,cy2);ctx.stroke();}
+  );
+
+  // ── BOTTOM LABEL ─────────────────────────────────────────────
+  ctx.font="400 8.5px 'Share Tech Mono'"; ctx.textAlign='center';
+  ctx.fillStyle='rgba(0,130,180,.32)';
+  ctx.fillText('▲  ELECTROMAGNETIC INTERACTION ZONE  ▲', W/2, H-8);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+function init() {
+  const w = document.getElementById('scene-wrap');
+  canvas.width=w.clientWidth; canvas.height=w.clientHeight;
+  osc.width=osc.parentElement.clientWidth-30; osc.height=50;
+  initObjects(canvas.width/2, canvas.height*.72);
+  buildInventory();
+  initStars(canvas.width, canvas.height);
+  setGesture('open');
+  requestAnimationFrame(render);
+}
+
+window.addEventListener('resize',()=>{
+  const w=document.getElementById('scene-wrap');
+  canvas.width=w.clientWidth; canvas.height=w.clientHeight;
+  osc.width=osc.parentElement.clientWidth-30;
+  initObjects(canvas.width/2, canvas.height*.72);
+  buildInventory(); initStars(canvas.width, canvas.height);
+});
+
 init();
 </script>
 </body>

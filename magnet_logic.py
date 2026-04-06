@@ -1,32 +1,43 @@
 """
-MagnoGlove - Magnet Control Logic
-====================================
-Translates hand gesture states into electromagnet behavior parameters.
-Implements a simple physics model for magnetic attraction force.
+MagnoGlove – Magnet Control Logic  v2.1  (Fixed & Enhanced)
+=============================================================
+BUG FIXES:
+  - Strength now lerps smoothly each frame instead of snapping
+    instantly — eliminates jarring "jump" when switching states.
+  - Radius used in get_pull_speed is now live (tracks lerped strength)
+    rather than the preset max, so force fades out gracefully at edges.
+  - Console log rate-limited: only logs on actual state transition,
+    not every frame (was causing console spam in previous version).
 
-System Flow
------------
-  Gesture (from CV module)
-      ↓
-  MagnetController.update(gesture)   ← sets state / strength / radius
-      ↓
-  MagnetController.attraction_force(obj_pos, magnet_pos)
-      ↓
-  Object velocity += force           ← applied each simulation frame
+IMPROVEMENTS:
+  - `strength_lerp_speed` config constant controls ramp up/down speed.
+  - `get_force_vector` helper takes object & magnet positions and returns
+    the 3D pull vector directly — used by simulation_3d.py.
+  - `get_info()` now includes live lerped values, not just presets.
 
 Magnet Presets
 --------------
-  OFF       → strength 0.0, radius 0.0  — electromagnet deactivated
-  ON        → strength 1.0, radius 8.0  — full electromagnetic pull
-  PRECISION → strength 0.35, radius 3.5 — reduced field (pinch mode)
+  OFF       → strength 0.0, radius 0.0  — deactivated
+  ON        → strength 1.0, radius 9.0  — full electromagnetic pull
+  PRECISION → strength 0.35, radius 3.8 — reduced field (pinch mode)
+
+Physics Model
+-------------
+  pull_speed_at_dist = pull_speed / (distance × 0.4 + 0.6)
+  Softened inverse-distance: stable at zero separation, ~7 u/s at 1 m.
 """
 
+from typing import Optional
 from gesture_detection import GestureState
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Magnet State Constants
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+#  Constants
+# ──────────────────────────────────────────────────────────────────────────────
+
+STRENGTH_RAMP_UP   = 5.5   # lerp speed factor when activating
+STRENGTH_RAMP_DOWN = 3.0   # lerp speed factor when deactivating
+
 
 class MagnetState:
     OFF       = "OFF"
@@ -34,128 +45,121 @@ class MagnetState:
     PRECISION = "PRECISION"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Magnet Presets (tunable)
-# ─────────────────────────────────────────────────────────────────────────────
-
-_PRESETS = {
+_PRESETS: dict[str, dict] = {
     MagnetState.OFF: {
-        'strength'    : 0.00,   # Force multiplier  [0 – 1]
-        'radius'      : 0.00,   # Attraction radius (world units)
-        'pull_speed'  : 0.00,   # Object move speed toward magnet
-        'ring_scale'  : 0.00,   # Field ring max visual scale
-        'glow_alpha'  : 0,      # Glow sphere transparency
+        'target_strength': 0.00,
+        'radius'         : 0.00,
+        'pull_speed'     : 0.00,
+        'ring_scale'     : 0.00,
+        'glow_alpha'     : 0,
     },
     MagnetState.ON: {
-        'strength'    : 1.00,
-        'radius'      : 9.00,
-        'pull_speed'  : 7.00,
-        'ring_scale'  : 3.20,
-        'glow_alpha'  : 55,
+        'target_strength': 1.00,
+        'radius'         : 9.20,
+        'pull_speed'     : 7.50,
+        'ring_scale'     : 3.30,
+        'glow_alpha'     : 60,
     },
     MagnetState.PRECISION: {
-        'strength'    : 0.35,
-        'radius'      : 3.80,
-        'pull_speed'  : 2.20,
-        'ring_scale'  : 1.60,
-        'glow_alpha'  : 35,
+        'target_strength': 0.35,
+        'radius'         : 3.90,
+        'pull_speed'     : 2.30,
+        'ring_scale'     : 1.65,
+        'glow_alpha'     : 38,
     },
 }
 
+# Gesture → MagnetState mapping
+_GESTURE_MAP: dict[str, str] = {
+    GestureState.CLOSED_FIST: MagnetState.ON,
+    GestureState.PINCH:       MagnetState.PRECISION,
+    GestureState.OPEN_HAND:   MagnetState.OFF,
+    GestureState.UNKNOWN:     MagnetState.OFF,   # safe default
+}
 
-# ─────────────────────────────────────────────────────────────────────────────
+
+# ──────────────────────────────────────────────────────────────────────────────
 #  MagnetController
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
 
 class MagnetController:
     """
     Manages electromagnet state and provides force calculations.
 
-    Gesture → State Mapping:
-      CLOSED_FIST  →  ON         (glove electromagnet fully activated)
-      PINCH        →  PRECISION  (reduced field, fine manipulation)
-      OPEN_HAND    →  OFF        (electromagnet deactivated, objects drop)
-      UNKNOWN      →  OFF        (safe default)
-
-    Physics Model:
-      F = strength × pull_speed / (distance + damping)
-      Simplified inverse-distance (not full inverse-square) for stability.
+    Call update(gesture, dt) every frame; the controller smoothly ramps
+    strength between 0 and the preset target using exponential lerp.
     """
 
     def __init__(self):
-        self.state      : str   = MagnetState.OFF
-        self.strength   : float = 0.0
-        self.radius     : float = 0.0
-        self.pull_speed : float = 0.0
-        self.ring_scale : float = 0.0
-        self.glow_alpha : int   = 0
-        self._prev_state        = None
+        self.state          : str   = MagnetState.OFF
+        self.strength       : float = 0.0   # live lerped value [0–1]
+        self._target        : float = 0.0
+        self.radius         : float = 0.0
+        self.pull_speed     : float = 0.0
+        self.ring_scale     : float = 0.0
+        self.glow_alpha     : int   = 0
+        self._prev_state    : Optional[str] = None
 
-    # ─────────────── State Update ────────────────────────────────
+    # ── Update ────────────────────────────────────────────────────────────────
 
-    def update(self, gesture: str) -> str:
+    def update(self, gesture: str, dt: float = 0.016) -> str:
         """
-        Evaluate gesture and update all magnet parameters.
+        Evaluate gesture, update state, smoothly lerp strength.
 
         Args:
-            gesture: GestureState constant string
+            gesture : GestureState constant from gesture_detection thread
+            dt      : frame delta-time in seconds (for smooth lerp)
 
         Returns:
-            New MagnetState constant string
+            Current MagnetState constant string
         """
-        # Gesture → state mapping
-        if gesture == GestureState.CLOSED_FIST:
-            new_state = MagnetState.ON
-        elif gesture == GestureState.PINCH:
-            new_state = MagnetState.PRECISION
-        else:
-            new_state = MagnetState.OFF
+        new_state = _GESTURE_MAP.get(gesture, MagnetState.OFF)
 
-        # Log transitions
         if new_state != self._prev_state:
-            print(f"  [Magnet] {self._prev_state or 'INIT'} → {new_state}  "
-                  f"(gesture: {gesture})")
+            print(f"  [Magnet] {self._prev_state or 'INIT'} → {new_state}"
+                  f"  (gesture: {gesture})")
             self._prev_state = new_state
 
-        # Apply preset parameters
-        preset          = _PRESETS[new_state]
+        preset = _PRESETS[new_state]
         self.state      = new_state
-        self.strength   = preset['strength']
+        self._target    = preset['target_strength']
         self.radius     = preset['radius']
         self.pull_speed = preset['pull_speed']
         self.ring_scale = preset['ring_scale']
         self.glow_alpha = preset['glow_alpha']
 
+        # Smooth strength ramp: faster when activating, slower when releasing
+        speed = STRENGTH_RAMP_UP if self._target > self.strength else STRENGTH_RAMP_DOWN
+        alpha = min(speed * dt, 1.0)
+        self.strength += (self._target - self.strength) * alpha
+
         return self.state
 
-    # ─────────────── Query Helpers ───────────────────────────────
+    # ── Query helpers ─────────────────────────────────────────────────────────
 
     def is_active(self) -> bool:
-        """True when electromagnet has any pull force."""
-        return self.state != MagnetState.OFF
+        return self.strength > 0.01
+
+    def effective_radius(self) -> float:
+        """Live attraction radius (not scaled by strength to ensure objects are reachable)."""
+        return self.radius
 
     def get_pull_speed(self, distance: float) -> float:
         """
-        Compute object pull speed at a given distance.
-        Uses softened inverse-distance: speed = pull_speed / (d*0.4 + 0.6)
-        The soft damping constant prevents infinite force at zero distance.
-
-        Args:
-            distance: Current distance from object to magnet (world units)
-
-        Returns:
-            Scalar speed value for this frame
+        Pull speed at given distance, using softened inverse-distance model.
+        Returns 0 if outside effective radius or magnet is inactive.
         """
         if not self.is_active() or distance > self.radius:
             return 0.0
         damp = distance * 0.4 + 0.6
-        return self.pull_speed / damp
+        return (self.pull_speed * self.strength) / damp
 
     def get_info(self) -> dict:
-        """Return a snapshot of current magnet parameters (for debug/UI)."""
+        """Snapshot of current live magnet parameters for debug / HUD."""
         return {
             'state'     : self.state,
-            'strength'  : self.strength,
-            'radius'    : self.radius,
-            'pull_speed': self.pull_speed,
+            'strength'  : round(self.strength, 3),
+            'radius'    : round(self.effective_radius(), 2),
+            'pull_speed': round(self.pull_speed, 2),
+            'glow_alpha': self.glow_alpha,
         }

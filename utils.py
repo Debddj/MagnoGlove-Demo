@@ -1,61 +1,67 @@
 """
-MagnoGlove - Utility Functions
-================================
-Shared state management and helper math utilities used across all modules.
-Thread-safe state dictionary acts as the communication bus between the
-gesture detection thread and the Ursina simulation main thread.
+MagnoGlove – Utility Functions  v2.1
+======================================
+Shared state management and helper math utilities.
+
+CHANGES:
+  - shared_state now includes 'confidence' key so the 3D HUD can show
+    how certain the gesture classifier is.
+  - Added vec3_lerp helper for smooth 3D position interpolation.
+  - Added ease_out_cubic for ring animation easing.
 """
 
 import threading
+import math
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Shared State Factory
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+#  Shared State
+# ──────────────────────────────────────────────────────────────────────────────
 
 def create_shared_state() -> dict:
     """
-    Create a thread-safe shared state dictionary.
+    Thread-safe shared state dict bridging gesture detection → 3D sim.
 
-    This dictionary is the communication bridge between:
-      - gesture_detection.py  (writer, background thread)
-      - simulation_3d.py      (reader, Ursina main thread)
-
-    Returns:
-        dict: {
-            'lock'    : threading.Lock  – must be held for any read/write
-            'gesture' : str             – current GestureState constant
-        }
+    Keys
+    ----
+      lock       : threading.Lock  – acquire before any read or write
+      gesture    : str             – current GestureState constant
+      confidence : float           – classifier confidence 0.0–1.0
     """
     return {
-        'lock'   : threading.Lock(),
-        'gesture': 'UNKNOWN',
+        'lock'      : threading.Lock(),
+        'gesture'   : 'UNKNOWN',
+        'confidence': 0.0,
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Math Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────
+#  Math helpers
+# ──────────────────────────────────────────────────────────────────────────────
 
-def clamp(value: float, min_val: float, max_val: float) -> float:
-    """Clamp a value to [min_val, max_val]."""
-    return max(min_val, min(max_val, value))
+def clamp(value: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, value))
 
 
 def remap(value: float,
-          in_min: float, in_max: float,
-          out_min: float, out_max: float) -> float:
-    """
-    Linearly remap a value from one range to another.
-    Example: remap(0.5, 0, 1, 0, 100) → 50.0
-    """
-    t = clamp((value - in_min) / (in_max - in_min + 1e-9), 0.0, 1.0)
-    return out_min + t * (out_max - out_min)
+          in_lo: float, in_hi: float,
+          out_lo: float, out_hi: float) -> float:
+    """Linearly remap value from [in_lo, in_hi] → [out_lo, out_hi]."""
+    t = clamp((value - in_lo) / (in_hi - in_lo + 1e-9), 0.0, 1.0)
+    return out_lo + t * (out_hi - out_lo)
 
 
 def smooth_lerp(current: float, target: float, speed: float, dt: float) -> float:
-    """
-    Exponential smooth approach (frame-rate independent lerp).
-    Feels more natural than linear lerp for physics objects.
-    """
+    """Frame-rate-independent exponential smooth-step lerp."""
     return current + (target - current) * clamp(speed * dt, 0.0, 1.0)
+
+
+def ease_out_cubic(t: float) -> float:
+    """CSS-style ease-out cubic: fast start, slow end. Input/output 0–1."""
+    t = clamp(t, 0.0, 1.0)
+    return 1.0 - (1.0 - t) ** 3
+
+
+def ease_in_out_sine(t: float) -> float:
+    """Smooth sinusoidal ease-in-out for animation loops."""
+    return -(math.cos(math.pi * t) - 1.0) / 2.0
