@@ -1,206 +1,359 @@
-# ⚡ MagnoGlove – Gesture Controlled Electromagnetic Glove
-### MVP Software Demonstration
+<div align="center">
+
+# ⚡ MagnoGlove Pro
+
+### Dual-Hand Gesture Controlled Electromagnetic AR Simulation
+
+[![Live Demo](https://img.shields.io/badge/🚀_LIVE_DEMO-Click_to_Launch-00e5ff?style=for-the-badge&labelColor=0a0e1a)](https://debddj.github.io/MagnoGlove-Demo/)
+[![GitHub Pages](https://img.shields.io/badge/Deployed_on-GitHub_Pages-222?style=for-the-badge&logo=github)](https://debddj.github.io/MagnoGlove-Demo/)
+[![License](https://img.shields.io/badge/License-MIT-ffab00?style=for-the-badge)](./LICENSE)
+
+**Control virtual electromagnetic gloves with your bare hands.**
+Your webcam tracks both hands in real time — make a fist to pull metallic objects,
+pinch for precision mode, or open your hands to release them.
+
+[🎮 **Try It Now**](https://debddj.github.io/MagnoGlove-Demo/) · [📖 How It Works](#-how-it-works) · [🛠 Local Setup](#-local-development)
 
 ---
 
-## Overview
+</div>
 
-MagnoGlove is an interactive software demonstration that simulates a real
-electromagnetic glove controlled by hand gestures.  A webcam detects your
-hand in real time; the 3D simulation responds instantly by activating or
-releasing a virtual electromagnet that attracts metallic objects.
+## 🎯 What Is This?
+
+MagnoGlove Pro is a **browser-based Augmented Reality** experience that turns your hands into electromagnetic gloves. Using your webcam, AI identifies your hand gestures and maps a futuristic cybernetic glove overlay onto your hands — complete with glowing energy fields, electromagnetic rings, and lightning arcs between your palms.
+
+Metallic objects (screws, spheres, cubes, rods, and more) sit on a virtual surface. When you clench your fist or pinch your fingers, the magnetic field activates and pulls them towards your hands. Open your hands and they fall back down with realistic gravity.
+
+### ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🤲 **Dual Hand Tracking** | Both hands tracked simultaneously with independent gesture recognition |
+| ✊ **Fist = MAX POWER** | Strong electromagnetic pull — all objects fly toward your hands |
+| 👌 **Pinch = PRECISION** | Gentle, controlled pull with amber glow and smaller field radius |
+| ✋ **Open = RELEASE** | Magnetic field deactivates, objects fall with realistic gravity |
+| ⚡ **Inter-Hand Arcs** | Energy lightning arcs connect both hands when magnets are active |
+| 🔮 **Particle System** | 200 ambient particles swirl and get attracted to your active palms |
+| 🏗 **15 Physics Objects** | Screws, nuts, ball bearings, rods, cubes — small, medium, and large |
+| 📊 **Live HUD** | Real-time stats: gesture, magnet state, flux density, captured count |
+| 🌐 **Zero Install** | Runs entirely in the browser — just click the link and allow webcam |
 
 ---
 
-## System Requirements
+## 🚀 Quick Start
 
-| Component | Minimum |
-|-----------|---------|
-| OS        | Windows 10 / macOS 12 / Ubuntu 20.04 |
-| Python    | 3.9 – 3.11 |
-| RAM       | 4 GB |
-| GPU       | Optional (runs on CPU) |
-| Webcam    | Any USB or built-in |
+### Option 1: Use the Live Demo (Recommended)
 
----
+> **👉 [https://debddj.github.io/MagnoGlove-Demo/](https://debddj.github.io/MagnoGlove-Demo/)**
 
-## Installation
+1. Click the link above
+2. Wait for the AI hand-tracking model to download (~5 seconds)
+3. Click **"ENGAGE AR SIMULATION"**
+4. Allow webcam access when prompted
+5. Show your hands to the camera and make gestures!
 
-### 1. Clone / copy the project folder
-
-```
-magnoglove_demo/
-├── main.py
-├── gesture_detection.py
-├── magnet_logic.py
-├── simulation_3d.py
-├── utils.py
-├── requirements.txt
-└── README.md
-```
-
-### 2. Create a virtual environment (recommended)
+### Option 2: Run Locally
 
 ```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS / Linux
-source venv/bin/activate
+git clone https://github.com/Debddj/MagnoGlove-Demo.git
+cd MagnoGlove-Demo
+npm install
+npm run dev
 ```
 
-### 3. Install dependencies
+Open **http://localhost:5173** in Chrome or Edge.
+
+---
+
+## 🎮 Gesture Controls
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     GESTURE CONTROL MAP                         │
+├─────────────────┬───────────────┬───────────────────────────────┤
+│  ✊ CLOSED FIST  │  MAGNET: ON   │  Full electromagnetic pull    │
+│                 │  Color: CYAN  │  All objects fly to your hand  │
+│                 │  Power: 100%  │  Strong field, large radius    │
+├─────────────────┼───────────────┼───────────────────────────────┤
+│  👌 PINCH       │  MAGNET: PREC │  Gentle, controlled pull       │
+│                 │  Color: AMBER │  Slow approach, small radius   │
+│                 │  Power: 35%   │  Precision object manipulation │
+├─────────────────┼───────────────┼───────────────────────────────┤
+│  ✋ OPEN HAND   │  MAGNET: OFF  │  Field deactivated             │
+│                 │  Color: DIM   │  Objects fall with gravity     │
+│                 │  Power: 0%    │  Natural rest state            │
+└─────────────────┴───────────────┴───────────────────────────────┘
+```
+
+> **Pro Tip:** Use both hands simultaneously! Make a fist with your left hand and pinch with your right for asymmetric magnetic fields. Energy arcs will connect both hands.
+
+---
+
+## 📐 How It Works
+
+### System Architecture
+
+```mermaid
+graph TD
+    A[🎥 Webcam Feed] --> B[MediaPipe Vision AI]
+    B --> C{Hand Detected?}
+    C -->|Yes| D[Extract 21 Landmarks × 2 Hands]
+    C -->|No| E[Hide Glove Overlays]
+    D --> F[Classify Gesture per Hand]
+    F --> G[FIST / PINCH / OPEN]
+    G --> H[Map Landmarks to 3D World]
+    H --> I[Update Magnetic Force Fields]
+    H --> J[Render Cybernetic Glove Skeleton]
+    I --> K[Cannon-es Physics Engine]
+    K --> L[15 Metal Objects React]
+    J --> M[Three.js WebGL Renderer]
+    L --> M
+    M --> N[🖥 AR Composite Output]
+    A --> N
+
+    style A fill:#0a1628,stroke:#00e5ff,color:#00e5ff
+    style B fill:#0a1628,stroke:#00e5ff,color:#00e5ff
+    style K fill:#0a1628,stroke:#ffab00,color:#ffab00
+    style M fill:#0a1628,stroke:#00e676,color:#00e676
+    style N fill:#0a1628,stroke:#00e5ff,color:#00e5ff
+```
+
+### Data Flow Pipeline
+
+```mermaid
+sequenceDiagram
+    participant W as 🎥 Webcam
+    participant MP as 🧠 MediaPipe AI
+    participant HD as 🖐 HandDetector
+    participant PH as 🧲 MagnetPhysics
+    participant SV as 🎨 SceneVisuals
+    participant UI as 📊 HUD
+
+    loop Every Frame (~60 FPS)
+        W->>MP: Video Frame
+        MP->>HD: 21 Landmarks × 2 Hands
+        HD->>HD: Classify Gestures (FIST/PINCH/OPEN)
+        HD->>PH: Palm positions + Gesture states
+        PH->>PH: Calculate magnetic forces per hand
+        PH->>PH: Step physics simulation
+        PH->>SV: Object positions & quaternions
+        HD->>SV: Hand landmarks + gestures
+        SV->>SV: Render glove skeletons + auras
+        SV->>SV: Render energy arcs between hands
+        SV->>SV: Update particle system
+        SV->>UI: Gesture, flux, captured count
+    end
+```
+
+### Gesture Classification Logic
+
+```mermaid
+flowchart LR
+    A[21 Hand Landmarks] --> B{Thumb tip ↔ Index tip<br>distance < 0.06?}
+    B -->|Yes| C{Curled fingers < 3?}
+    C -->|Yes| D[👌 PINCH]
+    C -->|No| E[✊ FIST]
+    B -->|No| F{Curled fingers ≥ 3?}
+    F -->|Yes| E
+    F -->|No| G[✋ OPEN]
+
+    style D fill:#332200,stroke:#ffab00,color:#ffab00
+    style E fill:#002233,stroke:#00e5ff,color:#00e5ff
+    style G fill:#0a1628,stroke:#3a5068,color:#3a5068
+```
+
+---
+
+## 🏗 Project Structure
+
+```
+MagnoGlove-Demo/
+├── index.html              # Entry point — video + canvas + HUD overlay
+├── vite.config.js          # Vite config with GitHub Pages base path
+├── package.json            # Dependencies: Three.js, Cannon-es, MediaPipe
+│
+├── src/
+│   ├── main.js             # App orchestrator — init, animation loop, HUD
+│   ├── HandDetector.js     # MediaPipe hand tracking + gesture classification
+│   ├── MagnetPhysics.js    # Cannon-es physics world + magnetic force model
+│   ├── SceneVisuals.js     # Three.js renderer — gloves, particles, arcs
+│   └── style.css           # Dark sci-fi HUD styling
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # Auto-deploy to GitHub Pages on push
+│
+├── .gitignore              # Excludes node_modules, dist, etc.
+│
+└── [Legacy Python Files]   # Original Python prototype (kept as backup)
+    ├── main.py
+    ├── gesture_detection.py
+    ├── magnet_logic.py
+    ├── simulation_3d.py
+    ├── utils.py
+    └── requirements.txt
+```
+
+---
+
+## 🔧 Module Deep Dive
+
+### `HandDetector.js` — Vision AI
+
+| Property | Value |
+|----------|-------|
+| AI Model | MediaPipe HandLandmarker (float16) |
+| Tracking | 2 hands simultaneously |
+| Landmarks | 21 3D points per hand |
+| Delegate | GPU (auto-fallback to CPU) |
+| Gestures | FIST, PINCH, OPEN per hand |
+
+**Curl Detection Algorithm:**
+For each of the 4 fingers, measure the distance from fingertip to wrist. Compare against MCP knuckle-to-wrist distance. If `tip_dist < mcp_dist × 1.1`, the finger is curled. If ≥3 fingers are curled → **FIST**.
+
+---
+
+### `MagnetPhysics.js` — Electromagnetic Force Model
+
+```
+Force Model:
+  Close range (dist < 1.2m):  F = 40 × strength × mass    (centering + damping)
+  Long range  (dist > 1.2m):  F = 150 × strength × mass / (dist² × 0.3 + 0.5)
+
+Strength Presets:
+  ┌─────────────┬──────────┬───────────┬────────────┐
+  │ Gesture     │ Strength │ Max Range │ Visual     │
+  ├─────────────┼──────────┼───────────┼────────────┤
+  │ FIST        │ 1.00     │ 12 units  │ Cyan glow  │
+  │ PINCH       │ 0.35     │ 6 units   │ Amber glow │
+  │ OPEN        │ 0.00     │ 0 units   │ Dim        │
+  └─────────────┴──────────┴───────────┴────────────┘
+```
+
+Each hand operates its own independent magnetic field. When both hands are active, objects experience forces from both — they can be pulled between two palms, creating a dramatic tug-of-war effect.
+
+---
+
+### `SceneVisuals.js` — WebGL Rendering
+
+| Component | Description |
+|-----------|-------------|
+| **Hand Skeleton** | 21 glowing spheres (larger at fingertips/palm) + bone connections |
+| **Electromagnetic Aura** | Wireframe sphere pulsing around each palm |
+| **Expanding Rings** | 3 rings per hand that expand outward during attraction |
+| **Palm Glow** | Dynamic point light emanating from each palm center |
+| **Energy Arcs** | Sine-wave displaced lightning between both palms |
+| **Particle System** | 200 ambient particles attracted to active magnetic fields |
+| **Object Glow** | Grabbed objects emit blue glow via emissive material |
+| **PBR Materials** | Steel, copper, gold, iron, titanium with metalness/roughness |
+
+---
+
+## 🖥 System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **Browser** | Chrome 90+ / Edge 90+ | Chrome 120+ |
+| **Webcam** | Any USB or built-in | 720p+ |
+| **GPU** | WebGL 2.0 support | Dedicated GPU |
+| **Network** | First load: ~5 MB download | — |
+| **OS** | Any (runs in browser) | — |
+
+> **Note:** Firefox and Safari may have limited WebGL/MediaPipe performance. Chrome/Edge are recommended.
+
+---
+
+## 🛠 Local Development
 
 ```bash
-pip install -r requirements.txt
-```
+# Clone
+git clone https://github.com/Debddj/MagnoGlove-Demo.git
+cd MagnoGlove-Demo
 
-> **Note:** MediaPipe requires Python ≤ 3.11.  Use `python --version` to check.
+# Install
+npm install
 
----
+# Dev server (hot reload)
+npm run dev
 
-## How to Run
+# Production build
+npm run build
 
-```bash
-python main.py
-```
-
-Two windows will open:
-- **Webcam window** — shows your hand with landmark skeleton overlay
-- **3D simulation window** — interactive Ursina scene
-
----
-
-## Gesture Controls
-
-| Gesture | Action | Magnet State |
-|---------|--------|-------------|
-| ✊ Closed Fist | All fingers curled toward palm | **ON** – full magnetic pull |
-| ✋ Open Hand | All 4 fingers extended up | **OFF** – objects drop |
-| 👌 Pinch | Thumb tip touches index tip | **PRECISION** – slow gentle pull |
-
-Press **ESC** to exit the 3D window.  
-Press **Q** while the webcam window is focused to exit both.
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         main.py                             │
-│   Starts threads, instantiates modules, runs Ursina loop    │
-└─────────────────┬───────────────────────┬───────────────────┘
-                  │                       │
-     Background Thread              Main Thread
-                  │                       │
-  ┌───────────────▼──────────┐  ┌────────▼──────────────────┐
-  │   gesture_detection.py   │  │     simulation_3d.py       │
-  │                          │  │                            │
-  │  OpenCV  →  MediaPipe    │  │  Ursina Engine             │
-  │  Webcam  →  21 Landmarks │  │  3D Scene + Physics        │
-  │  Classify Gesture        │  │  Visual Effects            │
-  │                          │  │  HUD Overlay               │
-  └──────────┬───────────────┘  └────────┬───────────────────┘
-             │                           │
-             └──── shared_state dict ────┘
-                   (threading.Lock)
-                   gesture = "CLOSED_FIST"
-                             "OPEN_HAND"
-                             "PINCH"
-                             "UNKNOWN"
+# Preview production build
+npm run preview
 ```
 
 ---
 
-## Module Descriptions
+## 🐛 Troubleshooting
 
-### `gesture_detection.py`
-Captures webcam frames via OpenCV, passes them through MediaPipe Hands
-to extract 21 3D hand landmarks, and classifies gestures using geometric rules.
-
-**Classification logic:**
-1. Compute 2D distance between THUMB_TIP (landmark 4) and INDEX_TIP (8).
-   If `dist < 0.07` → **PINCH**
-2. For each of the 4 fingers, compare tip Y-coordinate to MCP knuckle Y.
-   In image space, Y increases downward — so `tip.y > mcp.y` means curled.
-   If ≥ 3 fingers curled → **CLOSED_FIST**
-3. Otherwise → **OPEN_HAND**
-
-### `magnet_logic.py`
-Pure Python state machine.  Maps gesture → magnet preset → physics parameters.
-
-| State     | strength | radius | pull_speed |
-|-----------|----------|--------|------------|
-| OFF       | 0.00     | 0.0    | 0.00       |
-| ON        | 1.00     | 9.0    | 7.00       |
-| PRECISION | 0.35     | 3.8    | 2.20       |
-
-Force model: `speed = pull_speed / (distance × 0.4 + 0.6)`
-
-### `simulation_3d.py`
-Ursina Engine scene.  `SimController` is a custom `Entity` subclass whose
-`update()` is called every frame by Ursina's render loop.
-
-- **Magnetic rings:** 5 overlapping `circle` quads expand outward with phase offset
-- **Glow sphere:** pulsing `sphere` entity around glove when active
-- **Object physics:** velocity accumulates toward glove, decelerates with damping
-- **Attachment snap:** when distance < 0.55 units, object locks near glove
-
-### `utils.py`
-`create_shared_state()` factory and small math helpers (`clamp`, `remap`,
-`smooth_lerp`).
+| Problem | Solution |
+|---------|----------|
+| **Webcam not detected** | Check browser permissions. Try `chrome://settings/content/camera` |
+| **"VISION AI FAILED"** | Slow network — model download timed out. Refresh and try again |
+| **Objects fall through floor** | Hard refresh (`Ctrl+Shift+R`) to clear cached JS |
+| **Low FPS** | Close other GPU-heavy tabs. Ensure hardware acceleration is ON in browser settings |
+| **Hands not detected** | Ensure good lighting. Keep hands 30–80 cm from camera |
+| **Only one hand tracked** | Move hands apart. MediaPipe needs clear separation to distinguish two hands |
 
 ---
 
-## Visual Effect Reference
+## 📋 Technology Stack
 
-```
-Magnet ON (Fist)
-  Glove color    →  Electric blue  (0, 145, 255)
-  Ring color     →  Cyan-blue expanding rings
-  Ring speed     →  Fast (2.1 cycles/sec)
-  Glow alpha     →  55 / 255
-  Object color   →  Shifts to light blue as they approach
+```mermaid
+graph LR
+    subgraph Frontend
+        A[Vite 5] --> B[Vanilla JS ES Modules]
+    end
 
-Magnet PRECISION (Pinch)
-  Glove color    →  Amber  (220, 170, 0)
-  Ring color     →  Golden rings, smaller radius
-  Ring speed     →  Slower (1.3 cycles/sec)
-  Glow alpha     →  35 / 255
+    subgraph "3D Graphics"
+        C[Three.js r160] --> D[WebGL 2.0]
+        C --> E[PBR Materials]
+        C --> F[Particle Systems]
+    end
 
-Magnet OFF (Open Hand)
-  Glove color    →  Dark blue  (40, 80, 175)
-  All effects    →  Hidden
-  Objects        →  Gravity → table → slide to rest position
+    subgraph "Physics"
+        G[Cannon-es] --> H[Rigid Body Dynamics]
+        G --> I[Collision Detection]
+        G --> J[Magnetic Force Model]
+    end
+
+    subgraph "Computer Vision"
+        K[MediaPipe Tasks Vision] --> L[Hand Landmarker]
+        L --> M[21 Landmarks × 2 Hands]
+        L --> N[GPU Accelerated WASM]
+    end
+
+    subgraph "Deployment"
+        O[GitHub Actions] --> P[GitHub Pages]
+    end
+
+    style A fill:#1a1a2e,stroke:#00e5ff,color:#00e5ff
+    style C fill:#1a1a2e,stroke:#00e676,color:#00e676
+    style G fill:#1a1a2e,stroke:#ffab00,color:#ffab00
+    style K fill:#1a1a2e,stroke:#ff6b6b,color:#ff6b6b
+    style O fill:#1a1a2e,stroke:#c0c0c0,color:#c0c0c0
 ```
 
 ---
 
-## Troubleshooting
+## 🎬 Demo Script (For Presentations)
 
-| Problem | Fix |
-|---------|-----|
-| `RuntimeError: Cannot open camera` | Check webcam is connected; try `camera_index=1` in main.py |
-| MediaPipe install fails | Ensure Python ≤ 3.11: `python --version` |
-| Poor gesture recognition | Ensure good lighting; keep hand 30–60 cm from camera |
-| Low FPS | Close other applications; check GPU drivers |
-| Ursina window black | Update GPU drivers or disable fullscreen |
-
----
-
-## Demo Script (for presentations)
-
-1. Start: `python main.py`
-2. Show **open hand** → objects sit idle on table
-3. Make **closed fist** → objects fly up and cluster around glove
-4. Open hand → objects drop back down with gravity
-5. Make **pinch** → objects float up slowly
-6. Explain how this mirrors the real hardware: MCU reads sensor,
-   drives MOSFET gate, energises electromagnet coil
+1. **Open** the [live demo link](https://debddj.github.io/MagnoGlove-Demo/)
+2. Click **ENGAGE AR SIMULATION** → allow webcam
+3. Show **both open hands** → objects sit idle on the table
+4. Make **one fist** → objects fly toward that hand with cyan glow
+5. Open that hand → objects drop with gravity
+6. **Pinch** both hands → gentle amber pull from both sides
+7. Make **both fists** → all objects rush upward, energy arcs crackle between hands
+8. Open both hands → everything falls back down dramatically
 
 ---
 
-*MagnoGlove — AI/ML Engineering Department Demo*
+<div align="center">
+
+### Built with 🧲 by the AI/ML Engineering Department
+
+**[⚡ Launch MagnoGlove Pro](https://debddj.github.io/MagnoGlove-Demo/)**
+
+</div>
