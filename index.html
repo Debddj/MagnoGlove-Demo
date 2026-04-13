@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MagnoGlove AR Pro</title>
+  <link rel="stylesheet" href="./src/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Webcam Feed -->
+    <video id="webcam" autoplay playsinline></video>
+    
+    <!-- 3D Overlay -->
+    <canvas id="three-canvas"></canvas>
+    
+    <!-- UI HUD -->
+    <div id="hud">
+      <header class="hud-header">
+        <div class="logo">
+          <span class="m">MAGNO</span><span class="g">GLOVE</span> <div class="dot blinking"></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">GESTURE</div><div class="val dim" id="ui-gesture">NONE</div></div>
+          <div class="stat"><div class="label">MAGNET</div><div class="val red" id="ui-magnet">OFF</div></div>
+          <div class="stat"><div class="label">FLUX</div><div class="val cyan" id="ui-flux">0.00 T</div></div>
+          <div class="stat"><div class="label">OBJ CAPTURED</div><div class="val green" id="ui-objects">0</div></div>
+        </div>
+      </header>
+
+      <div class="panel">
+        <div class="panel-title">SYSTEM INIT</div>
+        <div class="panel-row"><span class="k">VISION AI</span> <span class="v" id="ui-ai-status">LOADING...</span></div>
+        <div class="panel-row"><span class="k">PHYSICS ENG</span> <span class="v green">ONLINE</span></div>
+        <div class="panel-row"><span class="k">AR OVERLAY</span> <span class="v green">ONLINE</span></div>
+      </div>
+      
+      <div id="loading" class="overlay">
+        <h2>INITIALIZING NEURAL VISION...</h2>
+        <p>Downloading hand tracking AI model. This may take a moment on first load.</p>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <button id="start-btn" disabled>LOADING AI MODEL...</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
