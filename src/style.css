@@ -1,6 +1,6 @@
 :root {
   --bg: #03060d;
-  --panel: rgba(4, 10, 24, 0.85);
+  --panel: rgba(4, 10, 24, 0.88);
   --border: rgba(0, 180, 255, 0.2);
   --cyan: #00e5ff;
   --amber: #ffab00;
@@ -40,10 +40,10 @@ canvas#three-canvas {
   top: 0; left: 0;
   width: 100%; height: 100%;
   z-index: 2;
-  pointer-events: none; /* Let clicks pass through if needed */
+  pointer-events: none;
 }
 
-/* UI overlay */
+/* ── UI Overlay ── */
 #hud {
   position: absolute;
   top: 0; left: 0;
@@ -54,34 +54,43 @@ canvas#three-canvas {
   flex-direction: column;
 }
 
-/* Header */
+/* ── Header ── */
 .hud-header {
   display: flex;
-  background: rgba(2, 5, 14, 0.85);
+  background: rgba(2, 5, 14, 0.88);
   border-bottom: 1px solid var(--border);
-  height: 60px;
-  backdrop-filter: blur(4px);
+  height: 56px;
+  backdrop-filter: blur(8px);
 }
 
 .logo {
-  padding: 0 25px;
+  padding: 0 22px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   border-right: 1px solid var(--border);
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 16px;
   letter-spacing: 3px;
 }
 .logo .m { color: var(--cyan); }
 .logo .g { color: var(--amber); }
+.logo .version {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--dim);
+  letter-spacing: 2px;
+  border: 1px solid var(--border);
+  padding: 2px 5px;
+  margin-left: 4px;
+}
 
 .blinking {
-  width: 10px; height: 10px;
+  width: 9px; height: 9px;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 10px var(--green);
+  box-shadow: 0 0 8px var(--green);
   animation: blink 1.5s infinite;
 }
 
@@ -100,67 +109,74 @@ canvas#three-canvas {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 16px;
   border-left: 1px solid var(--border);
-  min-width: 120px;
+  min-width: 110px;
 }
 
 .stat .label {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--dim);
   letter-spacing: 2px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .stat .val {
   font-family: 'Orbitron', sans-serif;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
-/* Colors */
-.cyan { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+/* ── Color Utilities ── */
+.cyan  { color: var(--cyan);  text-shadow: 0 0 8px var(--cyan); }
 .amber { color: var(--amber); text-shadow: 0 0 8px var(--amber); }
-.red { color: var(--red); text-shadow: 0 0 8px var(--red); }
+.red   { color: var(--red);   text-shadow: 0 0 8px var(--red); }
 .green { color: var(--green); text-shadow: 0 0 8px var(--green); }
-.dim { color: var(--dim); }
+.dim   { color: var(--dim); }
 
-/* Bottom left panel */
+/* ── Side Panel ── */
 .panel {
   margin-top: auto;
-  margin-bottom: 30px;
-  margin-left: 30px;
-  width: 250px;
+  margin-bottom: 25px;
+  margin-left: 25px;
+  width: 240px;
   background: var(--panel);
   border: 1px solid var(--border);
-  padding: 15px;
-  backdrop-filter: blur(4px);
+  padding: 14px;
+  backdrop-filter: blur(6px);
 }
 
 .panel-title {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--dim);
   letter-spacing: 2px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-  margin-bottom: 10px;
+  padding-bottom: 7px;
+  margin-bottom: 8px;
 }
 
 .panel-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 6px;
-  font-size: 12px;
+  margin-bottom: 5px;
+  font-size: 11px;
 }
 
 .panel-row .k { color: var(--text); }
 .panel-row .v { font-weight: bold; }
 
-/* Loading overlay */
+.panel-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 10px 0;
+}
+
+/* ── Loading Overlay ── */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.88);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -172,32 +188,38 @@ canvas#three-canvas {
 
 .overlay h2 {
   color: var(--cyan);
-  text-shadow: 0 0 15px var(--cyan);
-  margin-bottom: 15px;
+  text-shadow: 0 0 20px var(--cyan);
+  margin-bottom: 12px;
+  font-size: 22px;
 }
 
 .overlay p {
   font-family: 'Share Tech Mono', monospace;
   color: var(--text);
-  margin-bottom: 30px;
+  margin-bottom: 25px;
+  max-width: 500px;
+  text-align: center;
+  line-height: 1.5;
 }
 
 button {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(0, 229, 255, 0.08);
   border: 1px solid var(--cyan);
   color: var(--cyan);
-  padding: 12px 30px;
+  padding: 12px 32px;
   font-family: 'Orbitron', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+  letter-spacing: 1px;
 }
 
 button:hover:not(:disabled) {
-  background: rgba(0, 229, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+  background: rgba(0, 229, 255, 0.25);
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+  transform: scale(1.02);
 }
 
 button:disabled {
@@ -205,15 +227,16 @@ button:disabled {
   cursor: not-allowed;
   border-color: var(--dim);
   color: var(--dim);
+  box-shadow: none;
 }
 
-/* Progress bar */
+/* ── Progress Bar ── */
 .progress-bar {
   width: 300px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
-  margin-bottom: 25px;
+  margin-bottom: 22px;
   overflow: hidden;
 }
 

@@ -8,19 +8,23 @@ let isStarted = false;
 let lastTime = 0;
 
 // DOM Elements
-const uiGesture = document.getElementById('ui-gesture');
-const uiMagnet = document.getElementById('ui-magnet');
-const uiFlux = document.getElementById('ui-flux');
-const uiObjects = document.getElementById('ui-objects');
-const startBtn = document.getElementById('start-btn');
+const uiGesture   = document.getElementById('ui-gesture');
+const uiMagnet    = document.getElementById('ui-magnet');
+const uiFlux      = document.getElementById('ui-flux');
+const uiObjects   = document.getElementById('ui-objects');
+const startBtn    = document.getElementById('start-btn');
 const loadingOverlay = document.getElementById('loading');
-const uiAiStatus = document.getElementById('ui-ai-status');
+const uiAiStatus  = document.getElementById('ui-ai-status');
+
+// ══════════════════════════════════════════════════════════════
+//  INITIALIZATION
+// ══════════════════════════════════════════════════════════════
 
 async function init() {
   canvas = document.getElementById('three-canvas');
-  video = document.getElementById('webcam');
+  video  = document.getElementById('webcam');
 
-  // ── Step 1: Load AI model first (no webcam needed yet) ──
+  // Step 1: Load AI model (no webcam needed yet)
   detector = new HandDetector(video);
   try {
     await detector.initialize();
@@ -36,7 +40,7 @@ async function init() {
   uiAiStatus.textContent = 'ONLINE';
   uiAiStatus.className = 'v green';
 
-  // ── Step 2: Enable start button — webcam is requested on click ──
+  // Step 2: Enable start button
   startBtn.disabled = false;
   startBtn.textContent = 'ENGAGE AR SIMULATION';
   startBtn.addEventListener('click', onStartClick);
@@ -46,15 +50,13 @@ async function onStartClick() {
   startBtn.disabled = true;
   startBtn.textContent = 'REQUESTING WEBCAM...';
 
-  // ── Step 3: Request webcam only after user clicks ──
+  // Step 3: Request webcam
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
     });
     video.srcObject = stream;
-    await new Promise((resolve) => {
-      video.onloadeddata = () => resolve();
-    });
+    await new Promise(resolve => { video.onloadeddata = resolve; });
   } catch (error) {
     console.error('Webcam Error:', error);
     startBtn.textContent = 'WEBCAM DENIED — RETRY';
@@ -66,47 +68,76 @@ async function onStartClick() {
     return;
   }
 
-  // ── Step 4: Init physics & visuals after webcam is live ──
+  // Step 4: Init physics & 3D visuals
   physics = new MagnetPhysics();
   visuals = new SceneVisuals(canvas, video);
   visuals.initPhysicsObjects(physics.getObjectsInfo());
 
   loadingOverlay.style.display = 'none';
   isStarted = true;
-  lastTime = performance.now(); // reset so first dt is tiny
+  lastTime = performance.now();
   animate();
 }
 
-function updateHUD(gesture, magnetStr, grabbedCount) {
-  let gState = 'NONE';
-  let gClass = 'dim';
-  let mState = 'OFF';
-  let mClass = 'dim';
+// ══════════════════════════════════════════════════════════════
+//  HUD UPDATE — shows combined status of both hands
+// ══════════════════════════════════════════════════════════════
 
-  if (gesture === 'FIST') {
-    gState = 'FIST'; gClass = 'cyan';
-    mState = 'MAX PULL'; mClass = 'cyan';
-  } else if (gesture === 'PINCH') {
-    gState = 'PINCH'; gClass = 'amber';
-    mState = 'PRECISION'; mClass = 'amber';
-  } else if (gesture === 'OPEN') {
-    gState = 'OPEN'; gClass = 'dim';
-    mState = 'INACTIVE'; mClass = 'dim';
-  }
+function updateHUD(handsData, magnets, grabbedCount) {
+  // Determine dominant gesture (strongest active hand)
+  let bestGesture = 'NONE';
+  let bestStr = 0;
 
-  uiGesture.textContent = gState;
+  ['Left', 'Right'].forEach(side => {
+    const hand = handsData.find(h => h.handedness === side);
+    const str = magnets[side].strength;
+    if (hand && str > bestStr) {
+      bestGesture = hand.gesture;
+      bestStr = str;
+    } else if (hand && hand.gesture !== 'OPEN' && bestGesture === 'NONE') {
+      bestGesture = hand.gesture;
+    }
+  });
+
+  // Count active hands
+  const activeHands = handsData.filter(h => h.gesture === 'FIST' || h.gesture === 'PINCH').length;
+  const handLabel = handsData.length === 2 ? 'DUAL' : handsData.length === 1 ? handsData[0].handedness.toUpperCase() : 'NONE';
+
+  // Gesture display
+  let gText, gClass;
+  if (bestGesture === 'FIST')   { gText = `✊ FIST (${handLabel})`; gClass = 'cyan'; }
+  else if (bestGesture === 'PINCH') { gText = `👌 PINCH (${handLabel})`; gClass = 'amber'; }
+  else if (handsData.length > 0) { gText = `✋ OPEN (${handLabel})`; gClass = 'dim'; }
+  else { gText = 'NO HANDS'; gClass = 'dim'; }
+
+  uiGesture.textContent = gText;
   uiGesture.className = `val ${gClass}`;
 
-  uiMagnet.textContent = mState;
+  // Magnet state
+  const maxStr = Math.max(magnets.Left.strength, magnets.Right.strength);
+  let mText, mClass;
+  if (maxStr > 0.5)     { mText = 'MAX POWER'; mClass = 'cyan'; }
+  else if (maxStr > 0.1) { mText = 'PRECISION'; mClass = 'amber'; }
+  else                   { mText = 'STANDBY'; mClass = 'dim'; }
+
+  if (activeHands === 2) mText = '⚡ DUAL ' + mText;
+
+  uiMagnet.textContent = mText;
   uiMagnet.className = `val ${mClass}`;
 
-  const fluxT = (magnetStr * 1.85).toFixed(2);
-  uiFlux.textContent = `${fluxT} T`;
-  uiFlux.className = `val ${magnetStr > 0 ? (gesture === 'FIST' ? 'cyan' : 'amber') : 'dim'}`;
+  // Flux
+  const flux = (maxStr * 1.85).toFixed(2);
+  uiFlux.textContent = `${flux} T`;
+  uiFlux.className = `val ${maxStr > 0.1 ? (maxStr > 0.5 ? 'cyan' : 'amber') : 'dim'}`;
 
-  uiObjects.textContent = grabbedCount;
+  // Objects
+  uiObjects.textContent = `${grabbedCount} / 15`;
   uiObjects.className = `val ${grabbedCount > 0 ? 'green' : 'dim'}`;
 }
+
+// ══════════════════════════════════════════════════════════════
+//  ANIMATION LOOP
+// ══════════════════════════════════════════════════════════════
 
 function animate() {
   requestAnimationFrame(animate);
@@ -115,44 +146,34 @@ function animate() {
   const now = performance.now();
   let dt = (now - lastTime) / 1000;
   lastTime = now;
+  if (dt > 0.1) dt = 0.016; // clamp
 
-  // Clamp dt to prevent physics explosion after tab switch / pause
-  if (dt > 0.1) dt = 0.016;
-
-  // 1. Detect Hand & Gestures
+  // 1. Detect hands
   const handResult = detector.detect();
+  const handsData = detector.getHands();
 
-  const gesture = detector.getCurrentGesture();
-  physics.updateMagnetState(gesture);
-
-  // Calculate 3D target for physics (palm center in physics world space)
-  let palmPos3D = null;
-  if (handResult && handResult.landmarks && handResult.landmarks.length > 0) {
-    const lms = handResult.landmarks[0];
-
-    // Palm center = average of wrist(0), index-mcp(5), pinky-mcp(17)
+  // 2. Build per-hand physics data with world positions
+  const handsWithWorld = handsData.map(h => {
+    const lms = h.landmarks;
+    // Palm center from wrist(0), index-mcp(5), pinky-mcp(17)
     const cx = (lms[0].x + lms[5].x + lms[17].x) / 3;
     const cy = (lms[0].y + lms[5].y + lms[17].y) / 3;
-    const cz = (lms[0].z + lms[5].z + lms[17].z) / 3;
+    const palmWorld = visuals.screenToWorld(cx, cy);
+    return { ...h, palmWorld };
+  });
 
-    palmPos3D = visuals.screenToWorld(cx, cy, cz);
-    physics.setMagnetTarget(palmPos3D);
-  } else {
-    physics.setMagnetTarget(null);
-  }
-
-  // 2. Step Physics
+  // 3. Update physics
+  physics.updateFromHands(handsWithWorld);
   physics.step(dt);
 
-  // 3. Update Visuals
+  // 4. Render
   const physicsData = physics.getObjectsData();
-  const magnetStr = physics.getMagnetStrength();
-  visuals.update(handResult, gesture, magnetStr, physicsData, dt);
+  const magnets = physics.getMagnets();
+  visuals.update(handResult, handsWithWorld, magnets, physicsData, dt);
 
-  // 4. Update HUD
-  const grabbed = physics.getGrabbedCount();
-  updateHUD(gesture, magnetStr, grabbed);
+  // 5. HUD
+  updateHUD(handsWithWorld, magnets, physics.getGrabbedCount());
 }
 
-// Start everything
+// Start
 init();

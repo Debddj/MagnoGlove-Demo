@@ -5,176 +5,187 @@ export class MagnetPhysics {
     this.world = new CANNON.World({
       gravity: new CANNON.Vec3(0, -9.82, 0)
     });
-    
-    // Improved bounds so stuff doesn't fall forever
+
     this.floorMaterial = new CANNON.Material('floor');
     this.objectMaterial = new CANNON.Material('object');
-    
+
     const contactMaterial = new CANNON.ContactMaterial(this.floorMaterial, this.objectMaterial, {
       friction: 0.8,
-      restitution: 0.1
+      restitution: 0.15
     });
     this.world.addContactMaterial(contactMaterial);
 
+    // Object-object contact for stacking
+    const objObj = new CANNON.ContactMaterial(this.objectMaterial, this.objectMaterial, {
+      friction: 0.4,
+      restitution: 0.2
+    });
+    this.world.addContactMaterial(objObj);
+
     this.objects = [];
-    this.magnetTarget = null; // Vector3
-    this.magnetState = 'OFF';
-    this.magnetStr = 0;
+
+    // Per-hand magnet state: { target, state, strength }
+    this.magnets = {
+      Left:  { target: null, state: 'OFF', strength: 0 },
+      Right: { target: null, state: 'OFF', strength: 0 }
+    };
+
     this.grabbedCount = 0;
 
-    this.createFloor();
+    this.createBounds();
     this.spawnObjects();
   }
 
-  createFloor() {
-    const floorShape = new CANNON.Plane();
-    const floorBody = new CANNON.Body({
-      mass: 0,
-      material: this.floorMaterial
-    });
-    floorBody.addShape(floorShape);
-    // Plane points in +Z, rotate it to face +Y
+  createBounds() {
+    // Floor
+    const floorBody = new CANNON.Body({ mass: 0, material: this.floorMaterial });
+    floorBody.addShape(new CANNON.Plane());
     floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-    floorBody.position.set(0, -3, 0); // Put table at y= -3
+    floorBody.position.set(0, -3.5, 0);
     this.world.addBody(floorBody);
-    
-    // Back wall
-    const wall1 = new CANNON.Body({ mass: 0 });
-    wall1.addShape(new CANNON.Plane());
-    wall1.position.set(0, 0, -8);
-    this.world.addBody(wall1);
-    
-    // Front wall (closer to cam to prevent falling out)
-    const wall2 = new CANNON.Body({ mass: 0 });
-    wall2.addShape(new CANNON.Plane());
-    wall2.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI);
-    wall2.position.set(0, 0, 5);
-    this.world.addBody(wall2);
-    
-    // Left/Right walls
-    const wallL = new CANNON.Body({ mass: 0 });
-    wallL.addShape(new CANNON.Plane());
-    wallL.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI/2);
-    wallL.position.set(-10, 0, 0);
-    this.world.addBody(wallL);
 
-    const wallR = new CANNON.Body({ mass: 0 });
-    wallR.addShape(new CANNON.Plane());
-    wallR.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -Math.PI/2);
-    wallR.position.set(10, 0, 0);
-    this.world.addBody(wallR);
+    // Walls: keep objects in a reasonable space
+    const walls = [
+      { pos: [0, 0, -8], rot: [0, 0, 0] },       // back
+      { pos: [0, 0, 5],  rot: [Math.PI, 0, 0] },  // front
+      { pos: [-12, 0, 0], rot: [0, Math.PI/2, 0] }, // left
+      { pos: [12, 0, 0],  rot: [0, -Math.PI/2, 0] }, // right
+      { pos: [0, 15, 0],  rot: [Math.PI/2, 0, 0] }, // ceiling
+    ];
+    walls.forEach(w => {
+      const body = new CANNON.Body({ mass: 0 });
+      body.addShape(new CANNON.Plane());
+      if (w.rot[0]) body.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), w.rot[0]);
+      if (w.rot[1]) body.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), w.rot[1]);
+      body.position.set(...w.pos);
+      this.world.addBody(body);
+    });
   }
 
   spawnObjects() {
     const objDefs = [
-      { mass: 2,   shape: 'sphere', size: [0.6] }, // Large heavy sphere
-      { mass: 0.5, shape: 'sphere', size: [0.3] }, // small sphere
-      { mass: 1,   shape: 'box',    size: [0.5, 0.5, 0.5] }, // cube
-      { mass: 0.8, shape: 'box',    size: [0.2, 0.8, 0.2] }, // rod
-      { mass: 3,   shape: 'sphere', size: [0.8] }, // Big heavy sphere
-      { mass: 0.3, shape: 'box',    size: [0.3, 0.3, 0.3] }, // scrap
-      { mass: 0.6, shape: 'sphere', size: [0.4] }, // medium sphere
-      { mass: 1.5, shape: 'box',    size: [0.6, 0.4, 0.6] }, // brick
-      { mass: 0.2, shape: 'sphere', size: [0.2] }, // tiny sphere
-      { mass: 0.4, shape: 'box',    size: [0.2, 0.2, 0.6] }, // screw
+      // Small objects
+      { mass: 0.15, shape: 'sphere', size: [0.15], label: 'Screw' },
+      { mass: 0.2,  shape: 'box',    size: [0.12, 0.12, 0.12], label: 'Nut' },
+      { mass: 0.25, shape: 'sphere', size: [0.18], label: 'Ball Bearing' },
+      { mass: 0.1,  shape: 'box',    size: [0.08, 0.08, 0.3], label: 'Nail' },
+      { mass: 0.18, shape: 'sphere', size: [0.14], label: 'Rivet' },
+      // Medium objects
+      { mass: 0.5,  shape: 'sphere', size: [0.3], label: 'Steel Sphere' },
+      { mass: 0.6,  shape: 'box',    size: [0.35, 0.35, 0.35], label: 'Iron Cube' },
+      { mass: 0.4,  shape: 'box',    size: [0.15, 0.6, 0.15], label: 'Rod' },
+      { mass: 0.7,  shape: 'sphere', size: [0.35], label: 'Chrome Ball' },
+      { mass: 0.55, shape: 'box',    size: [0.4, 0.25, 0.4], label: 'Plate' },
+      // Large objects
+      { mass: 1.5,  shape: 'sphere', size: [0.55], label: 'Cannon Ball' },
+      { mass: 2.0,  shape: 'box',    size: [0.5, 0.5, 0.5], label: 'Heavy Cube' },
+      { mass: 1.2,  shape: 'sphere', size: [0.45], label: 'Lead Sphere' },
+      { mass: 1.8,  shape: 'box',    size: [0.6, 0.35, 0.6], label: 'Anvil Block' },
+      { mass: 2.5,  shape: 'sphere', size: [0.65], label: 'Wrecking Ball' },
     ];
 
     objDefs.forEach((def, i) => {
       let shape;
       if (def.shape === 'sphere') shape = new CANNON.Sphere(def.size[0]);
-      if (def.shape === 'box') shape = new CANNON.Box(new CANNON.Vec3(def.size[0]/2, def.size[1]/2, def.size[2]/2));
+      else shape = new CANNON.Box(new CANNON.Vec3(def.size[0]/2, def.size[1]/2, def.size[2]/2));
 
       const body = new CANNON.Body({
         mass: def.mass,
-        shape: shape,
+        shape,
         material: this.objectMaterial,
-        linearDamping: 0.5,  // air resistance
-        angularDamping: 0.5
+        linearDamping: 0.4,
+        angularDamping: 0.4
       });
 
-      // Spread randomly around the table
-      const x = (Math.random() - 0.5) * 8;
-      const z = (Math.random() - 0.5) * 4 - 2;
-      body.position.set(x, Math.random() * 2, z);
-      
+      // Spread across the floor
+      const x = (Math.random() - 0.5) * 14;
+      const z = (Math.random() - 0.5) * 6 - 1;
+      body.position.set(x, -3 + def.size[0] + Math.random() * 2, z);
+
       this.world.addBody(body);
-      this.objects.push({
-        id: i,
-        body: body,
-        def: def
-      });
+      this.objects.push({ id: i, body, def, grabbed: false });
     });
   }
 
-  updateMagnetState(gesture) {
-    if (gesture === 'FIST') this.magnetState = 'ON';
-    else if (gesture === 'PINCH') this.magnetState = 'PRECISION';
-    else this.magnetState = 'OFF';
-  }
+  /**
+   * Update magnet states from hand data array
+   * @param {Array} hands - [{ handedness, gesture, palmWorld }]
+   */
+  updateFromHands(hands) {
+    // Reset both
+    this.magnets.Left.target = null;
+    this.magnets.Left.state = 'OFF';
+    this.magnets.Right.target = null;
+    this.magnets.Right.state = 'OFF';
 
-  setMagnetTarget(vecObj) {
-    // {x, y, z} representing the palm center in 3D physics coords
-    this.magnetTarget = vecObj;
+    hands.forEach(h => {
+      const m = this.magnets[h.handedness];
+      if (!m) return;
+      m.target = h.palmWorld;
+      if (h.gesture === 'FIST') m.state = 'ON';
+      else if (h.gesture === 'PINCH') m.state = 'PRECISION';
+      else m.state = 'OFF';
+    });
   }
 
   step(dt) {
-    // Ramp up/down magnet strength
-    let targetStr = 0;
-    if (this.magnetState === 'ON') targetStr = 1.0;
-    if (this.magnetState === 'PRECISION') targetStr = 0.35;
-    
-    // Smooth damp
-    this.magnetStr += (targetStr - this.magnetStr) * Math.min(dt * 5, 1);
+    // Smooth ramp per hand
+    ['Left', 'Right'].forEach(side => {
+      const m = this.magnets[side];
+      let target = 0;
+      if (m.state === 'ON') target = 1.0;
+      else if (m.state === 'PRECISION') target = 0.35;
+      m.strength += (target - m.strength) * Math.min(dt * 6, 1);
+    });
 
     this.grabbedCount = 0;
 
-    if (this.magnetTarget && this.magnetStr > 0.05) {
-      const tx = this.magnetTarget.x;
-      const ty = this.magnetTarget.y;
-      const tz = this.magnetTarget.z; // usually 0 on projected plane
+    // Apply forces from each active hand
+    this.objects.forEach(obj => {
+      obj.grabbed = false;
+      let totalForce = new CANNON.Vec3(0, 0, 0);
 
-      this.objects.forEach(obj => {
+      ['Left', 'Right'].forEach(side => {
+        const m = this.magnets[side];
+        if (!m.target || m.strength < 0.03) return;
+
+        const tx = m.target.x;
+        const ty = m.target.y;
+        const tz = m.target.z;
         const body = obj.body;
+
         const dx = tx - body.position.x;
         const dy = ty - body.position.y;
         const dz = tz - body.position.z;
-        const distSq = dx*dx + dy*dy + dz*dz;
-        const dist = Math.sqrt(distSq);
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-        // Inverse square law simplified, plus linear damping for stability
-        if (dist > 0.1) {
-          // If very close, snap to center-ish to avoid exploding
-          if (dist < 1.0) {
-            this.grabbedCount++;
-            
-            // Apply strong damping so they stick
-            body.velocity.scale(0.8, body.velocity);
-            
-            const pullForce = 50 * this.magnetStr * body.mass;
-            body.applyForce(new CANNON.Vec3(
-              (dx/dist) * pullForce,
-              (dy/dist) * pullForce,
-              (dz/dist) * pullForce
-            ), body.position);
+        if (dist < 0.15) return; // too close, skip
 
-            // Give them a little spin for visual flavor
-            body.angularVelocity.set(
-              body.angularVelocity.x + (Math.random()-0.5)*0.5,
-              body.angularVelocity.y + (Math.random()-0.5)*0.5,
-              body.angularVelocity.z + (Math.random()-0.5)*0.5
-            );
-          } else {
-             // Attraction force
-            const pullForce = (200 * this.magnetStr * body.mass) / (distSq * 0.5 + 0.1);
-            body.applyForce(new CANNON.Vec3(
-              (dx/dist) * pullForce,
-              ((dy + 2) /dist) * pullForce, // give positive offset so it pulls UP harder
-              (dz/dist) * pullForce
-            ), body.position);
-          }
+        const maxRange = m.state === 'ON' ? 12 : 6;
+        if (dist > maxRange) return;
+
+        if (dist < 1.2) {
+          // Grabbed — strong centering + damping
+          obj.grabbed = true;
+          body.velocity.scale(0.85, body.velocity);
+          const pull = 40 * m.strength * body.mass;
+          totalForce.x += (dx / dist) * pull;
+          totalForce.y += (dy / dist) * pull;
+          totalForce.z += (dz / dist) * pull;
+        } else {
+          // Long range attraction — inverse-square-ish
+          const pull = (150 * m.strength * body.mass) / (dist * dist * 0.3 + 0.5);
+          totalForce.x += (dx / dist) * pull;
+          totalForce.y += ((dy + 1.5) / dist) * pull; // bias upward
+          totalForce.z += (dz / dist) * pull;
         }
       });
-    }
+
+      if (totalForce.length() > 0.01) {
+        obj.body.applyForce(totalForce, obj.body.position);
+        if (obj.grabbed) this.grabbedCount++;
+      }
+    });
 
     this.world.step(1/60, dt, 3);
   }
@@ -187,15 +198,11 @@ export class MagnetPhysics {
     return this.objects.map(o => ({
       id: o.id,
       position: o.body.position,
-      quaternion: o.body.quaternion
+      quaternion: o.body.quaternion,
+      grabbed: o.grabbed
     }));
   }
 
-  getMagnetStrength() {
-    return this.magnetStr;
-  }
-  
-  getGrabbedCount() {
-    return this.grabbedCount;
-  }
+  getMagnets() { return this.magnets; }
+  getGrabbedCount() { return this.grabbedCount; }
 }
