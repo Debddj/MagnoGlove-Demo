@@ -109,9 +109,9 @@ canvas#three-canvas {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 12px;
   border-left: 1px solid var(--border);
-  min-width: 110px;
+  min-width: 92px;
 }
 
 .stat .label {

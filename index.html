@@ -30,13 +30,16 @@
           <div class="stat"><div class="label">MAGNET</div><div class="val dim" id="ui-magnet">STANDBY</div></div>
           <div class="stat"><div class="label">FLUX</div><div class="val dim" id="ui-flux">0.00 T</div></div>
           <div class="stat"><div class="label">CAPTURED</div><div class="val dim" id="ui-objects">0 / 15</div></div>
+          <div class="stat"><div class="label">FPS</div><div class="val dim" id="ui-fps">0.0</div></div>
+          <div class="stat"><div class="label">FRAME</div><div class="val dim" id="ui-frame-time">0.0 ms</div></div>
+          <div class="stat"><div class="label">TRACK STAB</div><div class="val dim" id="ui-stability">A0% D0%</div></div>
         </div>
       </header>
 
       <div class="panel">
         <div class="panel-title">SYSTEM STATUS</div>
         <div class="panel-row"><span class="k">VISION AI</span> <span class="v" id="ui-ai-status">LOADING...</span></div>
-        <div class="panel-row"><span class="k">TRACKING</span> <span class="v green">DUAL HAND</span></div>
+        <div class="panel-row"><span class="k">TRACKING</span> <span class="v green" id="ui-tracking-status">DUAL HAND</span></div>
         <div class="panel-row"><span class="k">PHYSICS</span> <span class="v green">ONLINE</span></div>
         <div class="panel-row"><span class="k">AR OVERLAY</span> <span class="v green">ONLINE</span></div>
         <div class="panel-sep"></div>

@@ -350,6 +350,34 @@ graph LR
 
 ---
 
+## 📹 Real-Time Evidence Checklist
+
+Use this when you need to **show** that the system is running in real time:
+
+1. Run the [live demo](https://debddj.github.io/MagnoGlove-Demo/) or `npm run dev` locally.
+2. Keep the HUD visible while demonstrating:
+   - `GESTURE`, `MAGNET`, `FLUX`, `CAPTURED`
+   - `FPS`, `FRAME`, `TRACK STAB`
+3. Perform latency-sensitive interactions in sequence:
+   - Open hand (idle)
+   - One fist (max pull)
+   - Pinch (precision pull)
+   - Dual-hand simultaneous control
+4. Record one side-by-side screen capture that includes both:
+   - Webcam feed
+   - 3D AR simulation response
+5. Use the on-screen objective metrics as runtime evidence:
+   - `FPS` (render/update rate)
+   - `FRAME` (average frame time, ms)
+   - `TRACK STAB` (A = any-hand stability, D = dual-hand stability over rolling 30s)
+
+For publications/defense slides, include a simple pipeline diagram with measured values:
+`Camera Input FPS → Hand Inference → Physics Step → Render Output → End-to-End Delay`.
+
+If you need **true AR device output** (headset/mobile passthrough), treat that as a separate WebXR integration phase. The current system demonstrates real-time browser-based AR simulation.
+
+---
+
 <div align="center">
 
 ### Built with 🧲 by the AI/ML Engineering Department
