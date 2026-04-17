@@ -257,6 +257,123 @@ canvas#geo-canvas {
 .panel-row .k { color: var(--text); }
 .panel-row .v { font-weight: bold; }
 
+/* ── Responsive Design for Mobile / Phones ── */
+@media (max-width: 768px) {
+  .hud-header {
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 5px;
+  }
+  
+  .logo {
+    width: 100%;
+    justify-content: center;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 5px 0;
+    margin-bottom: 5px;
+  }
+
+  .mode-toggle {
+    width: 100%;
+    justify-content: center;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mode-btn {
+    padding: 10px;
+    flex-grow: 1;
+    font-size: 13px;
+  }
+
+  .audio-controls {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    border-right: none;
+  }
+
+  .stats {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat {
+    min-width: 80px;
+    padding: 5px;
+    border-left: none;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child {
+    border-right: none;
+  }
+
+  .panel {
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 60px; /* Space for subtitle bar */
+    width: auto;
+    max-width: calc(100vw - 20px);
+    padding: 10px;
+    font-size: 10px;
+  }
+
+  .panel-title {
+    font-size: 9px;
+  }
+
+  /* Compact the subtitle bar */
+  #subtitle-bar {
+    width: 90vw;
+    padding: 8px 15px;
+    bottom: 10px;
+  }
+  
+  #subtitle-text {
+    font-size: 11px;
+  }
+}
+
+/* ── Specific Adjustments for Landscape Mobile ── */
+@media (max-width: 850px) and (orientation: landscape) {
+  .hud-header {
+    height: 48px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    padding-bottom: 0;
+  }
+  .logo {
+    width: auto;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+    margin-bottom: 0;
+    padding: 0 10px;
+  }
+  .mode-toggle {
+    width: auto;
+    border-bottom: none;
+    border-right: 1px solid var(--border);
+  }
+  .stats {
+    width: auto;
+    flex-wrap: nowrap;
+  }
+  .stat {
+    min-width: 70px;
+  }
+  .audio-controls {
+    position: static;
+  }
+  .panel {
+    margin-bottom: 10px;
+    margin-left: 10px;
+    width: 200px;
+  }
+}
+
 .panel-sep {
   height: 1px;
   background: var(--border);

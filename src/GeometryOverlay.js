@@ -400,8 +400,11 @@ export class GeometryOverlay {
   }
 
   drawInfoBox(ctx, items) {
-    const x = this.canvas.width - 230;
-    const y = 70;
+    const isMobile = this.canvas.width < 768;
+    const isLandscape = this.canvas.width > this.canvas.height;
+    const boxW = 210;
+    const x = this.canvas.width - boxW - (isMobile ? 10 : 20);
+    const y = isMobile ? (isLandscape ? 60 : 140) : 70;
     const lineH = 20;
     const boxH = items.length * lineH + 20;
 
@@ -433,8 +436,10 @@ export class GeometryOverlay {
   }
 
   drawPredictionBox(ctx, data) {
-    const x = this.canvas.width - 230;
-    const y = this.canvas.height - 130;
+    const isMobile = this.canvas.width < 768;
+    const boxW = 210;
+    const x = this.canvas.width - boxW - (isMobile ? 10 : 20);
+    const y = this.canvas.height - 130 - (isMobile ? 80 : 0);
 
     ctx.fillStyle = 'rgba(4, 10, 24, 0.88)';
     ctx.strokeStyle = 'rgba(255, 171, 0, 0.3)';
