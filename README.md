@@ -29,13 +29,18 @@ Metallic objects (screws, spheres, cubes, rods, and more) sit on a virtual surfa
 | Feature | Description |
 |---------|-------------|
 | 🤲 **Dual Hand Tracking** | Both hands tracked simultaneously with independent gesture recognition |
+| 🧲 **MAGNET MODE** | |
 | ✊ **Fist = MAX POWER** | Strong electromagnetic pull — all objects fly toward your hands |
 | 👌 **Pinch = PRECISION** | Gentle, controlled pull with amber glow and smaller field radius |
 | ✋ **Open = RELEASE** | Magnetic field deactivates, objects fall with realistic gravity |
 | ⚡ **Inter-Hand Arcs** | Energy lightning arcs connect both hands when magnets are active |
-| 🔮 **Particle System** | 200 ambient particles swirl and get attracted to your active palms |
-| 🏗 **15 Physics Objects** | Screws, nuts, ball bearings, rods, cubes — small, medium, and large |
-| 📊 **Live HUD** | Real-time stats: gesture, magnet state, flux density, captured count |
+| 📐 **GEOMETRY MODE** | |
+| 🔺 **Triangle Analysis** | Real-time Area (Heron's formula), Euclidean edge distances, and vertex angles |
+| ⭕ **Circle Projection** | Single hand pinch generates a circle displaying radius, diameter, area, and circumference |
+| 📈 **Predictive Math** | Calculates third-side ranges based on Triangle Inequality Theorem |
+| ⚙️ **SYSTEM UTILITIES** | |
+| 🔊 **Audio Tutor** | Built-in step-by-step voice synthesized narrator with on-screen subtitles |
+| 📱 **Mobile Ready** | Fully responsive HUD works smoothly on phones in both Portrait and Landscape |
 | 🌐 **Zero Install** | Runs entirely in the browser — just click the link and allow webcam |
 
 ---
@@ -161,6 +166,23 @@ flowchart LR
     style E fill:#002233,stroke:#00e5ff,color:#00e5ff
     style G fill:#0a1628,stroke:#3a5068,color:#3a5068
 ```
+
+---
+
+## 📏 Geometry Mode & Audio Guide
+
+MagnoGlove Pro features a secondary application mode: **Real-Time Spatial Measurement**.
+
+### Geometry Mode Use Cases
+By toggling the **GEOMETRY** button in the HUD, the physics simulation pauses, allowing the AI to analyze spatial relationships between your fingers:
+- **Two Hands (Triangle Analysis):** Using both index fingers and a thumb, the system forms a dynamic triangle in space. It actively computes Euclidean distances (in virtual `cm`), vertex angles (using vector dot products), and the total Area (using Heron's formula). It also applies the Triangle Inequality Theorem to predict valid ranges for a "missing" third side.
+- **One Hand (Circles & Lengths):** Shows Euclidean link distances between all 5 fingertips. Performing a pinch generates a circumscribed circle across the pinch diameter, calculating its exact radius, circumference, and area.
+
+### Interactive Audio Tutor
+To assist users, a built-in **Voice Synthesized Narrator** (`AudioGuide.js`) was added:
+- Click the speaker icon `🔊` in the top right to start the tutorial.
+- The guide talks you through the controls, gestures, and geometry mode features step-by-step.
+- On-screen subtitles dynamically appear at the bottom for high-noise environments and accessibility.
 
 ---
 
